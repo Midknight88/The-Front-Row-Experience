@@ -702,7 +702,7 @@ function leaveShow(){const p=st.play;if(!p.on&&!p.follow)return;p.on=false;p.fol
 // ================= YouTube =================
 const yt={player:null,apiP:null,vid:"",state:-1,lastRaw:0,lastPerf:0};
 function ytId(v){v=String(v||"").trim();if(!v)return"";
-  const m=v.match(/(?:v=|youtu\.be\/|\/shorts\/|\/embed\/|\/live\/)([A-Za-z0-9_-]{11})/);if(m)return m[1];
+  const m=v.match(/(?:v=|youtu\.be\/|\/shorts\/|\/embed\/|\/live\/|vid:)([A-Za-z0-9_-]{11})/);if(m)return m[1];   // vid: = a video opened from Google search
   return /^[A-Za-z0-9_-]{11}$/.test(v)?v:""}
 function loadYTApi(){
   if(window.YT&&window.YT.Player)return Promise.resolve();
