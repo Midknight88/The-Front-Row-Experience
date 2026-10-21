@@ -1,0 +1,25 @@
+{
+ "format": "front-row-show/1",
+ "id": "skz-creed",
+ "title": "CREED",
+ "artist": "Stray Kids",
+ "tempo": "listen",
+ "duration": 186,
+ "youtube": {"id": "y-rPpGpnSg0", "offset": 0},
+ "draft": true,
+ "notes": "Concept: a vow kept in the dark. Low, smoldering blood red and ember orange over black for the dark Travis Scott-style beat; every hook pulses all sticks together in red like a shared oath; Changbin's verse gets a red-and-white spotlight Chase; the final hook burns with Sparkle before a hard blackout.",
+ "cues": [
+  {"t": 0,   "section": "Intro",              "fx": "Pulse",   "colors": ["#7A0010"], "bright": 0.4},
+  {"t": 10,  "section": "Verse 1",            "fx": "Wave",    "colors": ["#9B111E", "#FF5A1F"], "bright": 0.6, "spread": 0.8},
+  {"t": 34,  "section": "Pre-hook",           "fx": "Pulse",   "colors": ["#FF5A1F"], "bright": 0.75},
+  {"t": 44,  "section": "Hook",               "fx": "Pulse",   "colors": ["#FF1F2A"], "bright": 1, "spread": 0},
+  {"t": 64,  "section": "Verse 2",            "fx": "Wave",    "colors": ["#9B111E", "#5B1A9E"], "bright": 0.6, "spread": 0.8},
+  {"t": 86,  "section": "Changbin verse",     "fx": "Chase",   "colors": ["#FF1F2A", "#FFFFFF"], "bright": 1},
+  {"t": 106, "section": "Hook",               "fx": "Pulse",   "colors": ["#FF1F2A"], "bright": 1, "spread": 0},
+  {"t": 126, "section": "Bridge",             "fx": "Solid",   "colors": ["#7A0010"], "bright": 0.25},
+  {"t": 142, "section": "Build",              "fx": "Strobe",  "colors": ["#FF5A1F"], "bright": 0.9},
+  {"t": 148, "section": "Final hook",         "fx": "Sparkle", "colors": ["#FF1F2A", "#FF5A1F", "#FFFFFF"], "bright": 1},
+  {"t": 172, "section": "Outro",              "fx": "Pulse",   "colors": ["#7A0010"], "bright": 0.4},
+  {"t": 182, "section": "Blackout",           "fx": "Off",     "colors": [], "bright": 0}
+ ]
+}
