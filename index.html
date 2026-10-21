@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>The Front Row Experience</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -99,6 +104,7 @@ code{font-family:var(--mono);font-size:.78rem}
 .ytwrap iframe,.ytwrap>div{width:100%;height:100%;display:block;border:0}
 .bigbtn{font-family:var(--display);font-weight:800;font-size:1.2rem;padding:16px}
 @media (prefers-reduced-motion:reduce){.bulb{transition:none}}
+[hidden]{display:none!important}
 </style>
 
 <div class="wrap">
@@ -183,7 +189,7 @@ code{font-family:var(--mono);font-size:.78rem}
         <div class="panel" id="ytNoShow" hidden style="background:var(--bg)">
           <div><div class="label">No show for this song yet</div><div id="ytNoShowTitle" style="font-weight:600"></div></div>
           <p class="note">Send this video to Claude and you'll get a show built for this exact song and video. It appears in your library on its own.</p>
-          <div class="row"><button id="ytAskClaude" class="primary">Copy request for Claude</button><button id="ytUseDemo" class="ghost">Use the all-purpose show</button></div>
+          <div class="row"><button id="ytAskClaude" class="primary">Copy request for Claude</button><button id="ytUseDemo" class="ghost">Use the all-purpose show</button><button id="ytRestore" class="primary" hidden>Restore its show</button></div>
           <p class="note" id="ytAskNote"></p>
         </div>
         <p class="note" id="ytNote">The song plays here inside the app, so the lights follow the video exactly, even after pausing or skipping.</p>
@@ -639,7 +645,12 @@ function ytInfo(){
 function ytCheckShow(){
   if(!yt.player||!yt.vid)return;
   const info=ytInfo(),has=visibleShows().some(s=>s.youtube?.id===yt.vid);
+  const removed=Object.values(st.shows).find(s=>s.youtube?.id===yt.vid&&hiddenShows().includes(s.id));
   $("ytNoShow").hidden=has||!info.title;
+  $("ytRestore").hidden=!removed;$("ytAskClaude").hidden=!!removed;
+  $("ytNoShow").querySelector(".label").textContent=removed?`You removed the show "${removed.title}"`:"No show for this song yet";
+  $("ytRestore").onclick=()=>{if(!removed)return;setHidden(hiddenShows().filter(x=>x!==removed.id));selectShow(removed.id,true);renderLib();ytCheckShow();
+    $("ytNote").className="note ok";$("ytNote").textContent=`Restored "${removed.title}". Press play.`};
   $("ytNoShowTitle").textContent=info.title?`${info.title}${info.channel?" · "+info.channel:""}`:"";
 }
 function ytState(s){
@@ -729,9 +740,15 @@ function renderLib(){
     rm.onclick=()=>{if(!rm.classList.contains("confirm")){rm.classList.add("confirm");rm.textContent="Tap to confirm";setTimeout(()=>{rm.classList.remove("confirm");rm.textContent="Remove"},3000);return}removeShow(s)};
     row.append(b,rm);box.appendChild(row);
   });
-  const nHidden=hiddenShows().filter(id=>st.shows[id]).length;
-  if(nHidden){const r=document.createElement("button");r.className="small ghost";r.style.marginTop="6px";r.textContent=`Restore ${nHidden} removed show${nHidden>1?"s":""}`;
-    r.onclick=()=>{setHidden([]);renderLib()};box.appendChild(r)}
+  const removed=hiddenShows().map(id=>st.shows[id]).filter(Boolean);
+  if(removed.length){
+    const h=document.createElement("div");h.className="label";h.style.marginTop="10px";h.textContent="Removed";box.appendChild(h);
+    removed.forEach(s=>{const row=document.createElement("div");row.className="librow";
+      const t=document.createElement("span");t.className="note";t.textContent=`${s.title}${s.artist?" · "+s.artist:""}`;
+      const r=document.createElement("button");r.className="small";r.textContent="Restore";r.setAttribute("aria-label",`Restore ${s.title}`);
+      r.onclick=()=>{setHidden(hiddenShows().filter(x=>x!==s.id));if(!st.showId)st.showId=s.id;renderLib();renderCues();renderEditor();if(typeof ytCheckShow==="function")ytCheckShow()};
+      row.append(t,r);box.appendChild(row)});
+  }
   if(!list.length){const n=document.createElement("p");n.className="note";n.textContent="No shows in the library. Ask Claude for one, or paste show code below.";box.prepend(n)}
   $("libCount").textContent=list.length+(list.length===1?" show":" shows");
 }
