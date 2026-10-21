@@ -177,6 +177,12 @@ code{font-family:var(--mono);font-size:.78rem}
           <button id="ytOffNow" class="small" title="Pause the video on the song's first beat, then tap">Song starts here</button>
           <span class="note" id="ytOffOut"></span>
         </div>
+        <div class="panel" id="ytNoShow" hidden style="background:var(--bg)">
+          <div><div class="label">No show for this song yet</div><div id="ytNoShowTitle" style="font-weight:600"></div></div>
+          <p class="note">Send this video to Claude and you'll get a show built for this exact song and video. It appears in your library on its own.</p>
+          <div class="row"><button id="ytAskClaude" class="primary">Copy request for Claude</button><button id="ytUseDemo" class="ghost">Use the all-purpose show</button></div>
+          <p class="note" id="ytAskNote"></p>
+        </div>
         <p class="note" id="ytNote">The song plays here inside the app, so the lights follow the video exactly, even after pausing or skipping.</p>
       </div>
 
@@ -612,7 +618,7 @@ async function ytLoad(id,autoplay){
   const show=curShow(),start=show?.youtube?.id===id?(show.youtube.offset||0):0;
   if(!yt.player){
     yt.player=new YT.Player("ytBox",{width:"100%",height:"100%",videoId:id,playerVars:{playsinline:1,rel:0,start:Math.floor(start)},
-      events:{onReady:()=>{if(autoplay){yt.player.playVideo()}},onStateChange:e=>ytState(e.data),
+      events:{onReady:()=>{ytCheckShow();if(autoplay){yt.player.playVideo()}},onStateChange:e=>ytState(e.data),
         onError:e=>{const n=$("ytNote");n.className="note warn";n.textContent=(e.data===101||e.data===150)?"This video's owner doesn't allow playing it outside YouTube. Try another upload, such as the official audio or a lyric video.":"YouTube couldn't play this video. Check the link."}}});
   }else{autoplay?yt.player.loadVideoById({videoId:id,startSeconds:start}):yt.player.cueVideoById({videoId:id,startSeconds:start})}
   // pick the show that uses this video
@@ -620,11 +626,21 @@ async function ytLoad(id,autoplay){
   if(match&&match.id!==st.showId)selectShow(match.id,true);
   const cur=curShow();
   note.className="note";note.textContent=cur?.youtube?.id===id?`Playing with the show "${cur.title}".`:"Press play. To keep this video with the selected show, tap Use this video for this show.";
-  updateYtOffOut();
+  updateYtOffOut();setTimeout(ytCheckShow,1500);
   if(autoplay){st.play.follow=true}
 }
+function ytInfo(){
+  let d={},dur=0;try{d=yt.player.getVideoData()||{};dur=yt.player.getDuration()||0}catch(e){}
+  return{id:yt.vid,title:d.title||"",channel:d.author||"",duration:dur};
+}
+function ytCheckShow(){
+  if(!yt.player||!yt.vid)return;
+  const info=ytInfo(),has=Object.values(st.shows).some(s=>s.youtube?.id===yt.vid);
+  $("ytNoShow").hidden=has||!info.title;
+  $("ytNoShowTitle").textContent=info.title?`${info.title}${info.channel?" · "+info.channel:""}`:"";
+}
 function ytState(s){
-  yt.state=s;
+  yt.state=s;if(s===5||s===1||s===2)ytCheckShow();
   if(s===1&&st.play.src==="yt"){             // playing: follow automatically, even if started from the video's own button
     st.play.follow=true;
     if(!st.play.on&&curShow())beginShow();
@@ -822,6 +838,11 @@ $("listen").onclick=startListening;
 
 document.querySelectorAll("#srcSeg button").forEach(b=>b.onclick=()=>setSource(b.dataset.src));
 $("ytLoad").onclick=()=>{const id=ytId($("ytLink").value);if(!id){$("ytNote").className="note warn";$("ytNote").textContent="That doesn't look like a YouTube link.";return}ytLoad(id,false)};
+$("ytAskClaude").onclick=async()=>{const i=ytInfo(),nt=$("ytAskNote");
+  const msg=`Make a Front Row show for this YouTube video and add it to my repo:\nhttps://www.youtube.com/watch?v=${i.id}\n(${i.title}${i.channel?" — "+i.channel:""}${i.duration?", "+fmtT(i.duration).replace(/\.\d$/,""):""})`;
+  try{await navigator.clipboard.writeText(msg);nt.className="note ok";nt.textContent="Copied. Paste it into your chat with Claude. When the show is ready, reload this page and load the video again."}
+  catch(e){nt.className="note";nt.textContent=msg}};
+$("ytUseDemo").onclick=()=>{const d=Object.values(st.shows).find(s=>s.origin==="builtin");if(d){selectShow(d.id,true);$("ytNoShow").hidden=true;$("ytNote").className="note";$("ytNote").textContent="Using the all-purpose show. Turn on Listen to the music on the Live tab so it follows this song's tempo."}};
 $("ytLink").onkeydown=e=>{if(e.key==="Enter")$("ytLoad").click()};
 $("ytSave").onclick=()=>{const show=curShow();if(!show||!yt.vid)return;show.youtube={id:yt.vid,offset:show.youtube?.id===yt.vid?show.youtube.offset:0};renderEditor();saveCurrent();updateYtOffOut();$("ytNote").className="note ok";$("ytNote").textContent=`Saved this video with "${curShow().title}".`};
 $("ytOffNow").onclick=()=>{const show=curShow();if(!show||!yt.player)return;show.youtube={id:yt.vid,offset:+ytTime().toFixed(2)};renderEditor();saveCurrent();updateYtOffOut()};
