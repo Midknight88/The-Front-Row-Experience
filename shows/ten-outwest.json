@@ -1,0 +1,28 @@
+{
+ "format": "front-row-show/1",
+ "id": "ten-outwest",
+ "title": "OUTWEST",
+ "artist": "TEN",
+ "tempo": "listen",
+ "duration": 186,
+ "youtube": {"id": "08ZJvWQ1pVM", "offset": 0},
+ "draft": true,
+ "notes": "Concept: late-night club set. Ultraviolet and electric cyan for the R&B verses, red heat for the builds, each drop snaps white across every stick, and the tech-house dance break runs a fast Chase like moving club lights.",
+ "cues": [
+  {"t": 0,   "section": "Intro",            "fx": "Pulse",   "colors": ["#5B1A9E"], "bright": 0.5},
+  {"t": 8,   "section": "Verse 1",          "fx": "Wave",    "colors": ["#5B1A9E", "#00E5FF"], "bright": 0.75, "spread": 0.7},
+  {"t": 30,  "section": "Pre-chorus",       "fx": "Pulse",   "colors": ["#FF1F2A"], "bright": 0.85},
+  {"t": 41,  "section": "Drop",             "fx": "Strobe",  "colors": ["#FFFFFF"], "bright": 1},
+  {"t": 45,  "section": "Chorus",           "fx": "Chase",   "colors": ["#00E5FF", "#8E44FF", "#FFFFFF"], "bright": 1},
+  {"t": 56,  "section": "Post-chorus",      "fx": "Wave",    "colors": ["#00E5FF", "#5B1A9E"], "bright": 0.9, "spread": 0.8},
+  {"t": 64,  "section": "Verse 2",          "fx": "Wave",    "colors": ["#FF1F2A", "#5B1A9E"], "bright": 0.75, "spread": 0.7},
+  {"t": 84,  "section": "Pre-chorus",       "fx": "Pulse",   "colors": ["#FF1F2A"], "bright": 0.85},
+  {"t": 95,  "section": "Drop",             "fx": "Strobe",  "colors": ["#FFFFFF"], "bright": 1},
+  {"t": 99,  "section": "Chorus",           "fx": "Chase",   "colors": ["#00E5FF", "#8E44FF", "#FFFFFF"], "bright": 1},
+  {"t": 112, "section": "Dance break",      "fx": "Chase",   "colors": ["#FF1F2A", "#00E5FF", "#FFFFFF"], "bright": 1},
+  {"t": 136, "section": "Bridge",           "fx": "Solid",   "colors": ["#5B1A9E"], "bright": 0.35},
+  {"t": 150, "section": "Final chorus",     "fx": "Sparkle", "colors": ["#00E5FF", "#8E44FF", "#FFFFFF"], "bright": 1},
+  {"t": 172, "section": "Outro",            "fx": "Pulse",   "colors": ["#5B1A9E"], "bright": 0.5},
+  {"t": 182, "section": "Blackout",         "fx": "Off",     "colors": [], "bright": 0}
+ ]
+}
