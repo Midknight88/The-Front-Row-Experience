@@ -44,6 +44,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .dev{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
 .dev:first-child{border-top:0}
 .dev .meta{min-width:0}
+.dev .ctl{grid-column:2/-1;display:flex;gap:6px;flex-wrap:wrap}
+.dev .ctl button{padding:6px 10px;font-size:.8rem}
+.dev .ctl button:disabled{opacity:.35;cursor:default}
 .dev .meta b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dev .meta span{font-family:var(--mono);font-size:.7rem;color:var(--muted)}
 .chip{font-family:var(--mono);font-size:.65rem;padding:3px 7px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
@@ -195,7 +198,7 @@ async function addBle(){
     const chr=await (await server.getPrimaryService(prof.svc)).getCharacteristic(prof.chr);
     const d={id:dev.id,name:dev.name||"Bluetooth stick",kind:"ble",shape:"",chr,tpl:prof.tpl,key:prof.key||"",resp:!!prof.resp,gap:prof.gap||45,last:"",busy:false,lastSend:0};
     dev.addEventListener("gattserverdisconnected",()=>{d.kind="lost";render()});
-    st.devices.push(d);render();
+    placeDevice(d);render();
   }catch(e){
     note.textContent=e.name==="NotFoundError"?"No stick was chosen. Put the stick in Bluetooth mode (usually a 3-second button hold) and try again.":
       e.name==="SecurityError"?"Bluetooth is blocked inside this preview. Open the page in its own browser tab to pair real sticks.":
@@ -239,7 +242,8 @@ function tick(now){
   markCue(cueIdx);
   const active=st.devices.filter(d=>d.kind!=="lost"),n=active.length;
   active.forEach((d,i)=>{
-    const [rgb,lvl]=frameColor(fx,colors,i,n,t);const b=lvl*st.bright;
+    let [rgb,lvl]=frameColor(fx,colors,i,n,t);let b=lvl*st.bright;
+    if(d.identUntil>now){rgb=[255,255,255];b=Math.floor(now/250)%2?1:0}   // Identify: blink white for 3 s
     if(d.el){d.el.style.setProperty("--c",rgb2hex(rgb));d.el.style.setProperty("--b",b.toFixed(3))}
     if(d.kind==="ble")sendBle(d,rgb.map(v=>v*b));
   });
@@ -247,6 +251,21 @@ function tick(now){
 }
 
 // ---------- UI ----------
+// Remember the shelf order of Bluetooth sticks (Chrome keeps device ids stable per site)
+function loadOrder(){try{return JSON.parse(localStorage.getItem("fre.order")||"[]")}catch(e){return[]}}
+function saveOrder(){const ids=st.devices.filter(d=>d.kind!=="virtual").map(d=>d.id);const old=loadOrder().filter(x=>!ids.includes(x));
+  try{localStorage.setItem("fre.order",JSON.stringify([...ids,...old]))}catch(e){}}
+function placeDevice(d){
+  const order=loadOrder(),rank=order.indexOf(d.id);
+  if(rank<0){st.devices.push(d);saveOrder();return}
+  let at=st.devices.length;
+  for(let i=0;i<st.devices.length;i++){const r=order.indexOf(st.devices[i].id);if(r>rank){at=i;break}}
+  st.devices.splice(at,0,d);
+}
+function moveDevice(d,step){
+  const i=st.devices.indexOf(d),j=i+step;if(j<0||j>=st.devices.length)return;
+  [st.devices[i],st.devices[j]]=[st.devices[j],st.devices[i]];saveOrder();render();
+}
 function render(){
   const stage=$("stage");stage.innerHTML="";
   st.devices.forEach(d=>{
@@ -258,8 +277,11 @@ function render(){
   st.devices.forEach((d,i)=>{
     const r=document.createElement("div");r.className="dev";
     const chip=d.kind==="ble"?'<span class="chip ble">Bluetooth</span>':d.kind==="lost"?'<span class="chip">Disconnected</span>':'<span class="chip">Virtual</span>';
-    r.innerHTML=`<span class="label">${String(i+1).padStart(2,"0")}</span><div class="meta"><b>${esc(d.name)}</b><span>${d.kind==="ble"?"sending live colors":"on-screen preview"}</span></div><div class="row">${chip}<button class="ghost" aria-label="Remove ${esc(d.name)}">✕</button></div>`;
-    r.querySelector("button").onclick=()=>{try{d.chr?.service?.device?.gatt?.disconnect()}catch(e){}st.devices.splice(st.devices.indexOf(d),1);render()};
+    r.innerHTML=`<span class="label">${String(i+1).padStart(2,"0")}</span><div class="meta"><b>${esc(d.name)}</b><span>${d.kind==="ble"?"sending live colors":"on-screen preview"}</span></div>${chip}<div class="ctl"><button data-a="up" aria-label="Move ${esc(d.name)} left" ${i===0?"disabled":""}>↑ Up</button><button data-a="down" aria-label="Move ${esc(d.name)} right" ${i===st.devices.length-1?"disabled":""}>↓ Down</button><button data-a="id">Identify</button><button data-a="rm" class="ghost" aria-label="Remove ${esc(d.name)}">Remove</button></div>`;
+    r.querySelector('[data-a="up"]').onclick=()=>moveDevice(d,-1);
+    r.querySelector('[data-a="down"]').onclick=()=>moveDevice(d,1);
+    r.querySelector('[data-a="id"]').onclick=()=>{d.identUntil=performance.now()+3000};
+    r.querySelector('[data-a="rm"]').onclick=()=>{try{d.chr?.service?.device?.gatt?.disconnect()}catch(e){}st.devices.splice(st.devices.indexOf(d),1);render()};
     list.appendChild(r);
   });
 }
