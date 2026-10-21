@@ -298,6 +298,9 @@ const EFFECTS=["Solid","Pulse","Strobe","Rainbow","Wave","Chase","Sparkle","Off"
 const BUILTIN_PROFILES={
   "Generic (fill in)":{prefix:"",svc:"",chr:"",tpl:"{r} {g} {b}"},
   "Stray Kids Light Stick V2":{prefix:"STRAY KIDS",svc:"00000000-0000-1000-8000-00805f9b34fb",chr:"00000000-0000-1000-8000-00805f9b34fb",tpl:"82 01 {r} {g} {b} 00 00 00 00 00 FD 47 52 41 56 45",key:"2174516473A1F5351004A13E6B716AB9",resp:true,gap:70},
+  "MONSTA X Light Stick V3 (trial)":{prefix:"MONSTA",alsoService:true,svc:"00000000-0000-1000-8000-00805f9b34fb",chr:"00000000-0000-1000-8000-00805f9b34fb",tpl:"82 01 {r} {g} {b} 00 00 00 00 00 FD 47 52 41 56 45",key:"2174516473A1F5351004A13E6B716AB9",resp:true,gap:70},
+  "P1Harmony Light Stick Ver.2":{prefix:"P1H",svc:"00010203-0405-0607-0809-0a0b0c0d1911",chr:"00010203-0405-0607-0809-0a0b0c0d2b19",tpl:"01 FF 00 {r} {g} {b} 00 00 {sum2}",resp:true,gap:50},
+  "P1Harmony Light Stick Ver.1":{prefix:"P1H",svc:"00010203-0405-0607-0809-0a0b0c0d1911",chr:"00010203-0405-0607-0809-0a0b0c0d2b19",tpl:"01 01 0B 00 00 {r} {g} {b} 00 00 {sum2}",resp:true,gap:50},
   "ELK-BLEDOM LED strip (test rig)":{prefix:"ELK-BLEDOM",svc:"0000fff0-0000-1000-8000-00805f9b34fb",chr:"0000fff3-0000-1000-8000-00805f9b34fb",tpl:"7E 07 05 03 {r} {g} {b} 10 EF"}
 };
 // A built-in demo so the Shows tab is never empty. More shows load from shows/index.json in the GitHub repo.
@@ -350,8 +353,19 @@ function addVirtual(name){
   render();
 }
 function parseTpl(tpl,rgb){
-  const [r,g,b]=rgb.map(v=>Math.round(v));const w=Math.min(r,g,b);const map={r,g,b,w};
-  return new Uint8Array(tpl.trim().split(/\s+/).map(t=>{const m=t.match(/^\{([rgbw])\}$/);return m?map[m[1]]:parseInt(t,16)&255}));
+  const [r,g,b]=rgb.map(v=>Math.max(0,Math.min(255,Math.round(v))));const w=Math.min(r,g,b);const map={r,g,b,w};
+  const out=[];
+  for(const t of tpl.trim().split(/\s+/)){
+    let m=t.match(/^\{([rgbw])\}$/);if(m){out.push(map[m[1]]);continue}
+    m=t.match(/^\{sum(\d+)\}$/);if(m){let x=0;for(let i=+m[1];i<out.length;i++)x+=out[i];out.push(x&255);continue}  // checksum of bytes N..here
+    out.push(parseInt(t,16)&255);
+  }
+  return new Uint8Array(out);
+}
+// which sticks to list in the chooser: by name, and (for sticks sharing a maker's service) by service too
+function bleOptions(prof){
+  const f=[];if(prof.prefix)f.push({namePrefix:prof.prefix});if(prof.alsoService)f.push({services:[prof.svc]});
+  return f.length?{filters:f,optionalServices:[prof.svc]}:{acceptAllDevices:true,optionalServices:[prof.svc]};
 }
 // AES-128-ECB of one 16-byte block = first block of AES-CBC with a zero IV
 const keyCache={};
@@ -362,13 +376,10 @@ async function aesBlock(keyHex,data){
 }
 async function addBle(){
   const note=$("bleNote");note.hidden=true;
-  const prof=st.profiles[st.profile];
   if(!navigator.bluetooth){note.textContent="This browser can't reach Bluetooth. Open this page in Chrome on Android (or the Bluefy browser on iPhone), served over https. Virtual sticks still work here.";note.hidden=false;return}
-  if(!prof.svc||!prof.chr){note.textContent="Fill in the Bluetooth protocol profile below first, so the app knows where to send colors.";note.hidden=false;return}
   try{
-    const opts=prof.prefix?{filters:[{namePrefix:prof.prefix}],optionalServices:[prof.svc]}:{acceptAllDevices:true,optionalServices:[prof.svc]};
-    const dev=await navigator.bluetooth.requestDevice(opts);
-    await connectDevice(dev,st.profile);
+    const dev=await navigator.bluetooth.requestDevice(allStickOptions());
+    await connectDevice(dev,null);
   }catch(e){
     note.textContent=e.name==="NotFoundError"?"No stick was chosen. Put the stick in Bluetooth mode (usually a 3-second button hold) and try again.":
       e.name==="SecurityError"?"Bluetooth is blocked inside this preview. Open the page in its own browser tab to pair real sticks.":
@@ -379,10 +390,31 @@ async function addBle(){
 // ---------- connecting, remembering and reconnecting sticks ----------
 const knownDevs=()=>{try{return JSON.parse(localStorage.getItem("fre.devices")||"{}")}catch(e){return{}}};
 function rememberDev(id,name,profile){const k=knownDevs();k[id]={name,profile};try{localStorage.setItem("fre.devices",JSON.stringify(k))}catch(e){}}
+// Every stick type the app knows: list them all in one chooser
+const usableProfiles=()=>Object.entries(st.profiles).filter(([,p])=>p.svc&&p.chr);
+function allStickOptions(){
+  const filters=[],svcs=new Set();let any=false;
+  usableProfiles().forEach(([,p])=>{svcs.add(p.svc);const o=bleOptions(p);if(o.acceptAllDevices)any=true;else filters.push(...o.filters)});
+  return any||!filters.length?{acceptAllDevices:true,optionalServices:[...svcs]}:{filters,optionalServices:[...svcs]};
+}
+// Best guesses for a stick, most likely first: a profile whose name prefix matches, then the rest
+function profileCandidates(dev,hint){
+  const name=(dev.name||"").toUpperCase(),all=usableProfiles();
+  const byName=all.filter(([,p])=>p.prefix&&name.startsWith(p.prefix.toUpperCase())).sort((a,b)=>b[1].prefix.length-a[1].prefix.length);
+  // P1Harmony: sticks named "...2" are the second version
+  byName.sort((a,b)=>{const v2=/2\s*$/.test(name);const s=x=>/Ver\.2/.test(x[0])===v2?0:1;return s(a)-s(b)});
+  const names=[hint,...byName.map(x=>x[0]),...all.filter(([,p])=>p.alsoService).map(x=>x[0]),...all.map(x=>x[0])].filter(Boolean);
+  return [...new Set(names)].filter(n=>st.profiles[n]);
+}
 async function connectDevice(dev,profileName){
-  const prof=st.profiles[profileName]||st.profiles[st.profile];
   const server=await dev.gatt.connect();
-  const chr=await (await server.getPrimaryService(prof.svc)).getCharacteristic(prof.chr);
+  let chr=null,used=null;
+  for(const n of profileCandidates(dev,profileName)){
+    const p=st.profiles[n];
+    try{chr=await (await server.getPrimaryService(p.svc)).getCharacteristic(p.chr);used=n;break}catch(e){}
+  }
+  if(!chr){try{dev.gatt.disconnect()}catch(e){}throw new Error(`the app doesn't know how to talk to ${dev.name||"this stick"} yet`)}
+  profileName=used;const prof=st.profiles[used];
   let d=st.devices.find(x=>x.id===dev.id);
   const fields={name:dev.name||"Bluetooth stick",kind:"ble",chr,dev,tpl:prof.tpl,key:prof.key||"",resp:!!prof.resp,gap:prof.gap||45,last:"",busy:false,lastSend:0,profile:profileName};
   if(d)Object.assign(d,fields);else{d={id:dev.id,shape:"",...fields};placeDevice(d)}
@@ -405,7 +437,7 @@ function renderReconnect(){
   $("reconBanner").textContent=pend.length===1?`Reconnect ${pend[0].name}`:`Reconnect your ${pend.length} light sticks`;
   pend.forEach(p=>{const b=document.createElement("button");b.textContent=`Reconnect ${p.name}`;
     b.onclick=async()=>{const prof=st.profiles[p.profile]||st.profiles[st.profile],note=$("bleNote");note.hidden=true;
-      try{const dev=await navigator.bluetooth.requestDevice(prof.prefix?{filters:[{namePrefix:prof.prefix}],optionalServices:[prof.svc]}:{acceptAllDevices:true,optionalServices:[prof.svc]});
+      try{const dev=await navigator.bluetooth.requestDevice(bleOptions(prof));
         await connectDevice(dev,p.profile);
         if(dev.id!==p.id){wasConnected=wasConnected.filter(x=>x!==p.id)}  // picked a different stick: drop the old reminder
         renderReconnect();
@@ -447,6 +479,9 @@ function placeDevice(d){
   for(let i=0;i<st.devices.length;i++){const r=order.indexOf(st.devices[i].id);if(r>rank){at=i;break}}
   st.devices.splice(at,0,d);
 }
+// profiles that use the same Bluetooth service as this stick (for example P1Harmony Ver.1 and Ver.2)
+function siblingProfiles(d){const cur=st.profiles[d.profile];if(!cur)return[];return Object.keys(st.profiles).filter(n=>{const p=st.profiles[n];return p.svc===cur.svc&&p.chr===cur.chr})}
+function setStickType(d,name){const p=st.profiles[name];if(!p)return;Object.assign(d,{profile:name,tpl:p.tpl,key:p.key||"",resp:!!p.resp,gap:p.gap||45,last:""});rememberDev(d.id,d.name,name);d.identUntil=performance.now()+2000;render()}
 function moveDevice(d,step){
   const i=st.devices.indexOf(d),j=i+step;if(j<0||j>=st.devices.length)return;
   [st.devices[i],st.devices[j]]=[st.devices[j],st.devices[i]];saveOrder();render();
@@ -908,8 +943,9 @@ function render(){
   st.devices.forEach((d,i)=>{
     const r=document.createElement("div");r.className="dev";
     const chip=d.kind==="ble"?'<span class="chip ble">Bluetooth</span>':d.kind==="lost"?'<span class="chip">Disconnected</span>':'<span class="chip">Virtual</span>';
-    r.innerHTML=`<span class="label">${String(i+1).padStart(2,"0")}</span><div class="meta"><b>${esc(d.name)}</b><span>${d.kind==="ble"?"sending live colors":"on-screen preview"}</span></div>${chip}<div class="ctl"><button class="small" data-a="up" aria-label="Move ${esc(d.name)} left" ${i===0?"disabled":""}>↑ Up</button><button class="small" data-a="down" aria-label="Move ${esc(d.name)} right" ${i===st.devices.length-1?"disabled":""}>↓ Down</button><button class="small" data-a="id">Identify</button>${d.kind==="lost"&&d.dev?'<button class="small primary" data-a="re">Reconnect</button>':""}<button class="small ghost" data-a="rm" aria-label="Remove ${esc(d.name)}">Remove</button></div>`;
+    r.innerHTML=`<span class="label">${String(i+1).padStart(2,"0")}</span><div class="meta"><b>${esc(d.name)}</b><span>${d.kind==="ble"?"sending live colors":"on-screen preview"}</span></div>${chip}<div class="ctl"><button class="small" data-a="up" aria-label="Move ${esc(d.name)} left" ${i===0?"disabled":""}>↑ Up</button><button class="small" data-a="down" aria-label="Move ${esc(d.name)} right" ${i===st.devices.length-1?"disabled":""}>↓ Down</button><button class="small" data-a="id">Identify</button>${d.kind==="ble"&&siblingProfiles(d).length>1?`<select class="small" data-a="type" aria-label="Stick type for ${esc(d.name)}" style="font:inherit;font-size:.8rem;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:5px 8px">${siblingProfiles(d).map(n=>`<option ${n===d.profile?"selected":""}>${esc(n)}</option>`).join("")}</select>`:""}${d.kind==="lost"&&d.dev?'<button class="small primary" data-a="re">Reconnect</button>':""}<button class="small ghost" data-a="rm" aria-label="Remove ${esc(d.name)}">Remove</button></div>`;
     const re=r.querySelector('[data-a="re"]');if(re)re.onclick=()=>reconnectLost(d);
+    const ty=r.querySelector('[data-a="type"]');if(ty)ty.onchange=()=>setStickType(d,ty.value);
     r.querySelector('[data-a="up"]').onclick=()=>moveDevice(d,-1);
     r.querySelector('[data-a="down"]').onclick=()=>moveDevice(d,1);
     r.querySelector('[data-a="id"]').onclick=()=>{d.identUntil=performance.now()+3000};
