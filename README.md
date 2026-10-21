@@ -40,6 +40,10 @@ A show is JSON:
 
 Send Claude a YouTube link (the app's **Copy request for Claude** button builds the message). Claude identifies the song from the video, plans the show around the song's sections and concept, saves it as `shows/<artist>-<song>.json` with that video's `youtube.id`, lists it in `shows/index.json` and pushes. When that video is loaded in the app, its show is picked automatically.
 
+### Making your edits the Claude version
+
+In the app, edit a show and tap **Send to Claude**. It copies a message with the show code, including the original show's `id`. Claude saves it over `shows/<file>.json` for that `id`, keeping the cues, colors and timing exactly as sent, sets `draft` to false if the timing was marked, and pushes. On the next reload the app sees the personal copy matches the Claude version and removes the copy.
+
 ## Music sources
 
 - **YouTube**: the song plays in YouTube's embedded player inside the app, and the lights follow its exact position.

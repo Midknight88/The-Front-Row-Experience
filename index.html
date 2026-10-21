@@ -236,6 +236,7 @@ code{font-family:var(--mono);font-size:.78rem}
         <div class="row">
           <button id="addCue">+ Add cue</button>
           <button id="saveShow" class="primary">Save show</button>
+          <button id="sendClaude">Send to Claude</button>
           <button id="dupShow" class="ghost">Duplicate</button>
           <button id="delShow" class="ghost">Delete</button>
         </div>
@@ -249,7 +250,7 @@ code{font-family:var(--mono);font-size:.78rem}
         <p class="note">Ask Claude for a show by naming a song, for example "Make a Front Row show for Stray Kids – S-Class". Claude replies with show code; paste it below. Copy the prompt to give Claude the exact format.</p>
         <button id="copyPrompt">Copy prompt for Claude</button>
         <div class="field"><label class="label" for="importBox">Paste show code</label><textarea id="importBox" placeholder='{"format":"front-row-show/1", ...}'></textarea></div>
-        <div class="row"><button id="importBtn" class="primary">Add to library</button><button id="exportBtn">Show code for this show</button></div>
+        <div class="row"><button id="importBtn" class="primary">Add to library</button><button id="exportBtn">Copy show code</button></div>
         <p class="note" id="importNote"></p>
       </div>
     </details>
@@ -709,6 +710,13 @@ async function loadRepoShows(){
     for(const f of (idx.shows||[])){
       try{const o=await (await fetch("shows/"+f,{cache:"no-cache"})).json();const s=normalizeShow(o,"repo");if(!st.shows[s.id]||st.shows[s.id].origin==="repo")addShow(s)}catch(e){}
     }
+    let folded=[];
+    Object.values(st.shows).filter(m=>m.origin==="mine").forEach(m=>{
+      const r=st.shows[baseId(m.id)];
+      if(r&&r.origin==="repo"&&r!==m&&showKey(r)===showKey(m)){delete st.shows[m.id];folded.push(r.title);if(st.showId===m.id)st.showId=r.id}
+    });
+    if(folded.length){saveMine();const n=$("saveNote");n.className="note ok";n.textContent=`Your edits to ${folded.map(t=>`"${t}"`).join(", ")} are now the Claude version, so your personal copy was removed.`;
+      renderCues();renderEditor();}
     renderLib();
   }catch(e){/* no repo shows (e.g. inside the Claude preview) */}
 }
@@ -812,8 +820,12 @@ function saveCurrent(){
   show.dirty=false;saveMine();renderLib();renderCues();renderEditor();
   $("saveNote").className="note ok";$("saveNote").textContent="Saved on this phone.";
 }
+const baseId=id=>String(id||"").replace(/-mine$/,"");
+// what makes two versions of a show the same (ignores notes and where it came from)
+const showKey=s=>JSON.stringify([s.title,s.artist,s.bpm||0,s.tempo,s.youtube?.id||"",+(s.youtube?.offset||0).toFixed(1),
+  s.cues.map(c=>[+c.t.toFixed(1),c.section,c.fx,c.colors,+(c.bright??1).toFixed(2),c.spread??null,c.bpm||0])]);
 function exportShow(show){
-  const o={format:"front-row-show/1",title:show.title,artist:show.artist,bpm:show.bpm||undefined,tempo:show.tempo,youtube:show.youtube||undefined,duration:show.duration||undefined,notes:show.notes||undefined,
+  const o={format:"front-row-show/1",id:baseId(show.id),title:show.title,artist:show.artist,bpm:show.bpm||undefined,tempo:show.tempo,youtube:show.youtube||undefined,duration:show.duration||undefined,notes:show.notes||undefined,
     cues:show.cues.map(c=>({t:+c.t.toFixed(2),section:c.section,fx:c.fx,colors:c.colors,bright:c.bright,...(c.spread!=null?{spread:c.spread}:{}),...(c.bpm?{bpm:c.bpm}:{})}))};
   return JSON.stringify(o,null,1);
 }
@@ -898,9 +910,13 @@ $("delShow").onclick=()=>{const show=curShow();const nt=$("saveNote");
 $("copyPrompt").onclick=async()=>{const nt=$("importNote");try{await navigator.clipboard.writeText(CLAUDE_PROMPT);nt.className="note ok";nt.textContent="Prompt copied. Paste it into Claude and fill in the song."}catch(e){$("importBox").value=CLAUDE_PROMPT;$("importBox").select();nt.className="note";nt.textContent="Copy the prompt from the box above."}};
 $("importBtn").onclick=()=>{const nt=$("importNote");
   try{let txt=$("importBox").value.trim();const m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error("Paste the show code, starting with {");
-    const s=normalizeShow(JSON.parse(m[0]),"mine");s.id="show-"+Math.random().toString(36).slice(2,8);addShow(s);saveMine();selectShow(s.id);
+    const o=JSON.parse(m[0]),s=normalizeShow(o,"mine");s.id=o.id&&st.shows[baseId(o.id)]?.origin==="repo"?baseId(o.id)+"-mine":"show-"+Math.random().toString(36).slice(2,8);addShow(s);saveMine();selectShow(s.id);
     nt.className="note ok";nt.textContent=`Added "${s.title}" with ${s.cues.length} cues.`;$("importBox").value="";}
   catch(e){nt.className="note warn";nt.textContent=e instanceof SyntaxError?"That isn't valid show code. Copy Claude's whole reply, including the curly braces.":e.message}};
+$("sendClaude").onclick=async()=>{const show=curShow();if(!show)return;readEditorHeader(show);
+  const msg=`Make this the Claude version of "${show.title}" in my repo:\n${exportShow(show)}`;const nt=$("saveNote");
+  try{await navigator.clipboard.writeText(msg);nt.className="note ok";nt.textContent="Copied. Paste it into your chat with Claude. Once Claude saves it, reload the app."}
+  catch(e){$("importBox").value=msg;$("editor").open=true;nt.className="note";nt.textContent="Copy the text from the box under Build a show with Claude."}};
 $("exportBtn").onclick=async()=>{const show=curShow();if(!show)return;readEditorHeader(show);const txt=exportShow(show);$("importBox").value=txt;const nt=$("importNote");
   try{await navigator.clipboard.writeText(txt);nt.className="note ok";nt.textContent="Show code copied. Send it to Claude to refine it, or keep it as a backup."}catch(e){nt.className="note";nt.textContent="Show code is in the box above."}};
 
