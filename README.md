@@ -39,7 +39,6 @@ A show is JSON:
 ## Music sources
 
 - **YouTube**: the song plays in YouTube's embedded player inside the app, and the lights follow its exact position.
-- **Spotify**: the app reads what's playing in the Spotify app and its position, and runs the show whose title and artist match. Spotify only allows personal developer apps with up to 5 users, owned by a Premium account, so each household creates its own: at developer.spotify.com/dashboard, create an app with Web API enabled, set the Redirect URI to the app's exact address (shown in the app), add each user's Spotify email under User Management, and paste the Client ID into the app. Sign-in uses the PKCE flow; no secret is stored.
 - **Song file**: a file from the phone, analyzed for tempo and played in sync.
 - **Other app**: tap Start on the first beat.
 

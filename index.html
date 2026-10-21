@@ -89,15 +89,11 @@ textarea{min-height:120px;resize:vertical}
 .note.warn{color:var(--warn)}
 .note.ok{color:var(--ok)}
 code{font-family:var(--mono);font-size:.78rem}
-.src{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.src{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .src button{padding:9px 4px;font-size:.85rem}
 .src button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
 .ytwrap{border-radius:12px;overflow:hidden;background:#000;aspect-ratio:16/9;max-width:100%}
 .ytwrap iframe,.ytwrap>div{width:100%;height:100%;display:block;border:0}
-ol.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:.85rem;color:var(--muted)}
-ol.steps b{color:var(--fg)}
-.copyline{display:flex;gap:6px;align-items:center}
-.copyline code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 8px}
 .bigbtn{font-family:var(--display);font-weight:800;font-size:1.2rem;padding:16px}
 @media (prefers-reduced-motion:reduce){.bulb{transition:none}}
 </style>
@@ -166,7 +162,6 @@ ol.steps b{color:var(--fg)}
       <div class="label">Music from</div>
       <div class="src" id="srcSeg">
         <button data-src="yt">YouTube</button>
-        <button data-src="spotify">Spotify</button>
         <button data-src="file">Song file</button>
         <button data-src="tap">Other app</button>
       </div>
@@ -183,28 +178,6 @@ ol.steps b{color:var(--fg)}
           <span class="note" id="ytOffOut"></span>
         </div>
         <p class="note" id="ytNote">The song plays here inside the app, so the lights follow the video exactly, even after pausing or skipping.</p>
-      </div>
-
-      <div id="src-spotify" class="wrap" style="gap:10px" hidden>
-        <div id="spSetup" class="wrap" style="gap:10px">
-          <p class="note">Play music in the regular Spotify app; the lights follow along and pick the matching show. One-time setup (needs a Spotify Premium account):</p>
-          <ol class="steps">
-            <li>On a computer, go to <b>developer.spotify.com/dashboard</b>, sign in and click <b>Create app</b>.</li>
-            <li>Any name and description. For <b>Redirect URI</b>, paste this exact address:<div class="copyline" style="margin-top:6px"><code id="spRedirect"></code><button class="small" id="spCopyRedirect">Copy</button></div></li>
-            <li>Tick <b>Web API</b>, accept the terms and save.</li>
-            <li>In the app's <b>User Management</b>, add the Spotify email of everyone who will use it (up to 5).</li>
-            <li>Copy the <b>Client ID</b> from the app's settings and paste it here.</li>
-          </ol>
-          <div class="row" style="flex-wrap:nowrap">
-            <input id="spClientId" style="flex:1;min-width:0;font-family:var(--mono);font-size:.8rem;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:9px" placeholder="Client ID" aria-label="Spotify Client ID">
-            <button id="spConnect" class="primary">Connect</button>
-          </div>
-        </div>
-        <div id="spLive" class="wrap" style="gap:8px" hidden>
-          <div class="row between"><div style="min-width:0"><div class="label">Spotify now playing</div><div id="spTrack" style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Nothing playing</div></div>
-            <button id="spDisconnect" class="small ghost">Disconnect</button></div>
-        </div>
-        <p class="note" id="spNote"></p>
       </div>
 
       <div id="src-file" class="wrap" style="gap:10px" hidden>
@@ -436,10 +409,9 @@ function showClock(){
   const p=st.play;if(!p.on)return 0;
   if(p.src==="file"&&audio.ctx&&audio.src)return audio.ctx.currentTime-audio.startAt+p.nudge;
   if(p.src==="yt"&&yt.player)return ytTime()-((curShow()?.youtube?.offset)||0)+p.nudge;
-  if(p.src==="spotify")return spPos()+p.nudge;
   return nowS()-p.startPerf+p.nudge;
 }
-function isPaused(){const p=st.play;return (p.src==="yt"&&yt.state!==1)||(p.src==="spotify"&&!sp.playing)}
+function isPaused(){const p=st.play;return p.src==="yt"&&yt.state!==1}
 function cueAt(show,t){let k=-1;show.cues.forEach((c,i)=>{if(c.t<=t+1e-6)k=i});return k}
 function enterCue(show,k){
   const c=show.cues[k];if(!c)return;
@@ -586,7 +558,7 @@ async function loadSongFile(file){
   }catch(e){note.className="note warn";note.textContent="Couldn't read that file. Try an MP3 or M4A.";audio.buf=null}
 }
 
-function beginShow(){const p=st.play;p.on=true;p.cue=-1;p.mark=1;p.lastT=0;$("markBtn").disabled=false;$("showStart").textContent=p.src==="spotify"?"Following Spotify":"Restart"}
+function beginShow(){const p=st.play;p.on=true;p.cue=-1;p.mark=1;p.lastT=0;$("markBtn").disabled=false;$("showStart").textContent="Restart"}
 function startShow(){
   const show=curShow(),p=st.play;
   if(p.src==="yt"){
@@ -596,10 +568,6 @@ function startShow(){
     if(want&&want!==yt.vid){ytLoad(want,true);return}
     if(yt.player){yt.player.seekTo(Math.max(0,show?.youtube?.offset||0),true);yt.player.playVideo()}
     beginShow();return;
-  }
-  if(p.src==="spotify"){
-    if(!sp.tok){$("spNote").className="note warn";$("spNote").textContent="Connect Spotify first.";return}
-    p.follow=true;p.nudge=0;sp.trackKey="";spPoll();$("showStart").textContent="Following Spotify";return;
   }
   if(!show)return;
   stopShow(true);p.nudge=0;
@@ -616,12 +584,12 @@ function stopShow(quiet){
   const p=st.play;p.on=false;p.cue=-1;p.follow=false;
   if(audio.src){try{audio.src.onended=null;audio.src.stop()}catch(e){}audio.src=null}
   if(!quiet&&p.src==="yt"&&yt.player&&yt.state===1){try{yt.player.pauseVideo()}catch(e){}}
-  $("showStart").textContent=p.src==="spotify"?"Follow Spotify":"Start";$("markBtn").disabled=true;markCue(-1);
+  $("showStart").textContent="Start";$("markBtn").disabled=true;markCue(-1);
   if(!quiet&&st.tempoSrc==="show")st.tempoSrc=listen.on?"listen":"manual";
 }
 // Live-tab taps take over the lights without stopping the music
 function leaveShow(){const p=st.play;if(!p.on&&!p.follow)return;p.on=false;p.follow=false;p.cue=-1;markCue(-1);$("markBtn").disabled=true;
-  $("showStart").textContent=p.src==="spotify"?"Follow Spotify":"Start";if(st.tempoSrc==="show")st.tempoSrc=listen.on?"listen":"manual"}
+  $("showStart").textContent="Start";if(st.tempoSrc==="show")st.tempoSrc=listen.on?"listen":"manual"}
 
 // ================= YouTube =================
 const yt={player:null,apiP:null,vid:"",state:-1,lastRaw:0,lastPerf:0};
@@ -669,97 +637,15 @@ function ytTime(){
 }
 function updateYtOffOut(){const show=curShow();$("ytOffOut").textContent=show?.youtube?.id===yt.vid&&yt.vid?`Song starts at ${fmtT(show.youtube.offset||0)} in this video`:""}
 
-// ================= Spotify =================
-// Each household uses its own Spotify developer app (Spotify limits personal apps to 5 users; owner needs Premium).
-const SP_SCOPES="user-read-playback-state user-read-currently-playing";
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
-const sp={clientId:lsGet("fre.sp.client")||"",tok:null,playing:false,progress:0,fetchedAt:0,trackKey:"",trackName:"",timer:null,pauseUntil:0};
-try{sp.tok=JSON.parse(lsGet("fre.sp.tok")||"null")}catch(e){}
-const spRedirect=()=>location.origin+location.pathname;
-const b64url=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
-async function spConnect(){
-  const id=$("spClientId").value.trim();const note=$("spNote");
-  if(!/^[0-9a-f]{32}$/i.test(id)){note.className="note warn";note.textContent="That doesn't look like a Client ID. It's 32 letters and numbers, from your Spotify app's settings.";return}
-  if(location.protocol!=="https:"&&location.hostname!=="127.0.0.1"){note.className="note warn";note.textContent="Spotify sign-in only works from the app's https web address.";return}
-  sp.clientId=id;lsSet("fre.sp.client",id);
-  const verifier=b64url(crypto.getRandomValues(new Uint8Array(48)));
-  const challenge=b64url(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(verifier)));
-  const state=b64url(crypto.getRandomValues(new Uint8Array(12)));
-  lsSet("fre.sp.verifier",verifier);lsSet("fre.sp.state",state);lsSet("fre.tab","shows");
-  const q=new URLSearchParams({response_type:"code",client_id:id,scope:SP_SCOPES,code_challenge_method:"S256",code_challenge:challenge,redirect_uri:spRedirect(),state});
-  location.href="https://accounts.spotify.com/authorize?"+q;
-}
-async function spTokenRequest(params){
-  const r=await fetch("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(params)});
-  const j=await r.json();if(!r.ok)throw new Error(j.error_description||j.error||"Spotify sign-in failed");
-  sp.tok={access:j.access_token,refresh:j.refresh_token||sp.tok?.refresh,exp:Date.now()+(j.expires_in||3600)*1000};
-  lsSet("fre.sp.tok",JSON.stringify(sp.tok));
-}
-async function spHandleRedirect(){
-  const q=new URLSearchParams(location.search);if(!q.has("code")&&!q.has("error"))return;
-  history.replaceState(null,"",location.pathname);
-  const note=$("spNote");
-  if(q.get("error")){note.className="note warn";note.textContent=q.get("error")==="access_denied"?"Spotify sign-in was cancelled.":"Spotify said: "+q.get("error");return}
-  if(q.get("state")!==lsGet("fre.sp.state")){note.className="note warn";note.textContent="Spotify sign-in didn't match. Try Connect again.";return}
-  try{await spTokenRequest({grant_type:"authorization_code",code:q.get("code"),redirect_uri:spRedirect(),client_id:sp.clientId,code_verifier:lsGet("fre.sp.verifier")});
-    lsSet("fre.sp.verifier",null);setSource("spotify");st.play.follow=true;note.className="note ok";note.textContent="Connected. Play something in Spotify.";
-  }catch(e){note.className="note warn";note.textContent=e.message+". Check the Redirect URI in your Spotify app matches the address above exactly."}
-  renderSpotify();
-}
-async function spAccess(){
-  if(!sp.tok)return null;
-  if(Date.now()>sp.tok.exp-60000){
-    try{await spTokenRequest({grant_type:"refresh_token",refresh_token:sp.tok.refresh,client_id:sp.clientId})}
-    catch(e){spDisconnect();$("spNote").className="note warn";$("spNote").textContent="Spotify signed you out. Tap Connect again.";return null}
-  }
-  return sp.tok.access;
-}
-async function spPoll(){
-  if(!sp.tok||st.play.src!=="spotify"||Date.now()<sp.pauseUntil)return;
-  const token=await spAccess();if(!token)return;
-  let r;try{r=await fetch("https://api.spotify.com/v1/me/player/currently-playing",{headers:{Authorization:"Bearer "+token}})}catch(e){return}
-  const note=$("spNote");
-  if(r.status===401){sp.tok.exp=0;return}
-  if(r.status===403){note.className="note warn";note.textContent="Spotify refused this account. In your Spotify app's User Management, add this account's email, and make sure the app owner has Premium.";sp.pauseUntil=Date.now()+15000;return}
-  if(r.status===429){const ra=+(r.headers.get("Retry-After")||30);sp.pauseUntil=Date.now()+ra*1000;note.className="note warn";note.textContent=`Spotify asked the app to slow down. Resuming in ${ra} seconds.`;return}
-  if(r.status===204){sp.playing=false;spTrack(null);return}
-  if(!r.ok)return;
-  const j=await r.json();
-  sp.playing=!!j.is_playing;sp.progress=(j.progress_ms||0)/1000;sp.fetchedAt=nowS();
-  spTrack(j.currently_playing_type==="track"?j.item:null);
-}
-const spPos=()=>sp.progress+(sp.playing?Math.min(5,nowS()-sp.fetchedAt):0);
-const norm=x=>String(x||"").toLowerCase().normalize("NFKD").replace(/\(.*?\)|\[.*?\]|feat\..*$/g,"").replace(/[^a-z0-9\u3131-\uD79D]/g,"");
-function findShowForTrack(name,artists){
-  const n=norm(name),arts=artists.map(norm);
-  return Object.values(st.shows).filter(s=>s.origin!=="builtin").find(s=>{const t=norm(s.title);
-    const titleOk=t&&(t===n||(t.length>3&&n.startsWith(t)));const a=norm(s.artist);return titleOk&&(!a||arts.some(x=>x.includes(a)||a.includes(x)))});
-}
-function spTrack(item){
-  const key=item?item.id:"";
-  if(key===sp.trackKey){return}
-  sp.trackKey=key;sp.trackName=item?`${item.name} · ${item.artists.map(a=>a.name).join(", ")}`:"Nothing playing";
-  $("spTrack").textContent=sp.trackName;
-  if(!st.play.follow||!item)return;
-  const match=findShowForTrack(item.name,item.artists.map(a=>a.name));const note=$("spNote");
-  if(match){selectShow(match.id,true);beginShow();note.className="note ok";note.textContent=`Running the show "${match.title}".`}
-  else{st.play.on=false;markCue(-1);note.className="note";note.textContent=`No show yet for "${item.name}", so the lights use the Live tab. Ask Claude to make one.`}
-}
-function spDisconnect(){sp.tok=null;sp.trackKey="";lsSet("fre.sp.tok",null);if(st.play.src==="spotify")stopShow(true);renderSpotify()}
-function renderSpotify(){
-  $("spRedirect").textContent=spRedirect();$("spClientId").value=sp.clientId;
-  $("spSetup").hidden=!!sp.tok;$("spLive").hidden=!sp.tok;
-}
-setInterval(()=>{if(st.play.src==="spotify"&&sp.tok)spPoll()},2000);
 
 // ================= music source =================
 function setSource(src){
   if(st.play.src!==src)stopShow(true);
   st.play.src=src;lsSet("fre.src",src);
   document.querySelectorAll("#srcSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.src===src));
-  ["yt","spotify","file","tap"].forEach(x=>$("src-"+x).hidden=x!==src);
-  $("showStart").textContent=src==="spotify"?(st.play.follow?"Following Spotify":"Follow Spotify"):"Start";
-  if(src==="spotify"){renderSpotify();if(sp.tok){st.play.follow=true;sp.trackKey="";$("showStart").textContent="Following Spotify"}spPoll()}
+  ["yt","file","tap"].forEach(x=>$("src-"+x).hidden=x!==src);
+  $("showStart").textContent="Start";
   if(src==="yt"){const id=curShow()?.youtube?.id;if(id&&id!==yt.vid)ytLoad(id,false)}
 }
 function markNext(){
@@ -939,8 +825,6 @@ $("ytLoad").onclick=()=>{const id=ytId($("ytLink").value);if(!id){$("ytNote").cl
 $("ytLink").onkeydown=e=>{if(e.key==="Enter")$("ytLoad").click()};
 $("ytSave").onclick=()=>{const show=curShow();if(!show||!yt.vid)return;show.youtube={id:yt.vid,offset:show.youtube?.id===yt.vid?show.youtube.offset:0};renderEditor();saveCurrent();updateYtOffOut();$("ytNote").className="note ok";$("ytNote").textContent=`Saved this video with "${curShow().title}".`};
 $("ytOffNow").onclick=()=>{const show=curShow();if(!show||!yt.player)return;show.youtube={id:yt.vid,offset:+ytTime().toFixed(2)};renderEditor();saveCurrent();updateYtOffOut()};
-$("spConnect").onclick=spConnect;$("spDisconnect").onclick=spDisconnect;
-$("spCopyRedirect").onclick=async()=>{try{await navigator.clipboard.writeText(spRedirect());$("spCopyRedirect").textContent="Copied"}catch(e){const r=document.createRange();r.selectNodeContents($("spRedirect"));const sel=getSelection();sel.removeAllRanges();sel.addRange(r)}};
 $("songFile").onchange=e=>{const f=e.target.files[0];if(f)loadSongFile(f)};
 $("showStart").onclick=startShow;$("showStop").onclick=()=>stopShow();
 $("nudgeBack").onclick=()=>{st.play.nudge-=.1};$("nudgeFwd").onclick=()=>{st.play.nudge+=.1};
@@ -985,8 +869,8 @@ let last=null;try{last=localStorage.getItem("fre.lastShow")}catch(e){}
 st.showId=last&&st.shows[last]?last:DEMO_SHOW.id;
 renderLib();renderCues();renderEditor();
 loadRepoShows();
-setSource(lsGet("fre.src")||"yt");
-spHandleRedirect();
+setSource(["yt","file","tap"].includes(lsGet("fre.src"))?lsGet("fre.src"):"yt");
+
 ["Stick 1","Stick 2","Stick 3","Stick 4"].forEach(n=>addVirtual(n));
 try{const t=localStorage.getItem("fre.tab");if(t&&$("tab-"+t))$("tab-"+t).click()}catch(e){}
 requestAnimationFrame(tick);
