@@ -267,6 +267,7 @@ code{font-family:var(--mono);font-size:.78rem}
       </div>
       <div id="devices"></div>
       <p class="note warn" id="bleNote" hidden></p>
+      <p class="note">Stick not in the list? <button id="addBleAll" class="small ghost">Show all nearby devices</button></p>
       <div id="reconnect" class="panel" hidden style="background:var(--bg)">
         <div><div class="label">Reconnect after reload</div><p class="note">The browser closes Bluetooth when the page reloads. Tap each stick, then pick it in the list. Make sure SKZ V2 and other light stick apps are closed.</p></div>
         <div id="reconnectList" style="display:flex;flex-direction:column;gap:6px"></div>
@@ -302,6 +303,7 @@ const BUILTIN_PROFILES={
   "P1Harmony Light Stick Ver.2":{prefix:"P1H",svc:"00010203-0405-0607-0809-0a0b0c0d1911",chr:"00010203-0405-0607-0809-0a0b0c0d2b19",tpl:"01 FF 00 {r} {g} {b} 00 00 {sum2}",resp:true,gap:50},
   "P1Harmony Light Stick Ver.1":{prefix:"P1H",svc:"00010203-0405-0607-0809-0a0b0c0d1911",chr:"00010203-0405-0607-0809-0a0b0c0d2b19",tpl:"01 01 0B 00 00 {r} {g} {b} 00 00 {sum2}",resp:true,gap:50},
   "ATEEZ Light Stick (LIGHTINY)":{prefix:"",alsoService:true,svc:"8ec91001-f315-4f60-9fb8-838830daea50",chr:"8ec91002-f315-4f60-9fb8-838830daea50",tpl:"01 00 00 {r} {g} {b} 00 00",resp:false,gap:40},
+  "BTS Light Stick Ver.4 (HYBE)":{prefix:"BTS",alsoService:true,svc:"0001fe01-0000-1000-8000-00805f9800c4",chr:"0001ff02-0000-1000-8000-00805f9800c4",tpl:"01 {r} {g} {b}",resp:false,gap:50},
   "ELK-BLEDOM LED strip (test rig)":{prefix:"ELK-BLEDOM",svc:"0000fff0-0000-1000-8000-00805f9b34fb",chr:"0000fff3-0000-1000-8000-00805f9b34fb",tpl:"7E 07 05 03 {r} {g} {b} 10 EF"}
 };
 // A built-in demo so the Shows tab is never empty. More shows load from shows/index.json in the GitHub repo.
@@ -375,11 +377,12 @@ async function aesBlock(keyHex,data){
   const out=new Uint8Array(await crypto.subtle.encrypt({name:"AES-CBC",iv:new Uint8Array(16)},keyCache[keyHex],data));
   return out.slice(0,16);
 }
-async function addBle(){
+async function addBle(showAll){
   const note=$("bleNote");note.hidden=true;
   if(!navigator.bluetooth){note.textContent="This browser can't reach Bluetooth. Open this page in Chrome on Android (or the Bluefy browser on iPhone), served over https. Virtual sticks still work here.";note.hidden=false;return}
   try{
-    const dev=await navigator.bluetooth.requestDevice(allStickOptions());
+    const o=allStickOptions();
+    const dev=await navigator.bluetooth.requestDevice(showAll===true?{acceptAllDevices:true,optionalServices:o.optionalServices}:o);
     await connectDevice(dev,null);
   }catch(e){
     note.textContent=e.name==="NotFoundError"?"No stick was chosen. Put the stick in Bluetooth mode (usually a 3-second button hold) and try again.":
@@ -1023,7 +1026,8 @@ $("reconBanner").onclick=()=>{$("tab-sticks").click();$("reconnect").scrollIntoV
 $("refreshShows").onclick=async()=>{const b=$("refreshShows"),before=JSON.stringify(Object.values(st.shows).filter(s=>s.origin==="repo").map(showKey));b.disabled=true;b.textContent="Checking…";
   await loadRepoShows();const after=JSON.stringify(Object.values(st.shows).filter(s=>s.origin==="repo").map(showKey));
   renderCues();renderEditor();b.disabled=false;b.textContent=before===after?"Up to date":"Updated";setTimeout(()=>b.textContent="Check for new shows",2500)};
-$("addBle").onclick=addBle;
+$("addBle").onclick=()=>addBle(false);
+$("addBleAll").onclick=()=>addBle(true);
 $("saveProfile").onclick=()=>{
   const p={prefix:$("pNamePrefix").value.trim(),svc:$("pSvc").value.trim().toLowerCase(),chr:$("pChr").value.trim().toLowerCase(),tpl:$("pTpl").value.trim()||"{r} {g} {b}",key:$("pKey").value.replace(/\s/g,""),resp:$("pResp").value==="1",gap:st.profiles[st.profile].gap||(($("pResp").value==="1")?70:45)};
   const name=st.profile==="Generic (fill in)"?(p.prefix||"My stick")+" profile":st.profile;
