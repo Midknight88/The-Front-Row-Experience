@@ -23,6 +23,6 @@
   {"t": 148.36, "section": "Closing", "fx": "Wave", "colors": ["#F50000", "#C37022", "#FFFFFF"], "bright": 0.5},
   {"t": 159.26, "section": "Closing 2", "fx": "Pulse", "colors": ["#F50000", "#C37022", "#FFFFFF"], "bright": 0.5},
   {"t": 170.25, "section": "Closing 3", "fx": "Wave", "colors": ["#F50000", "#C37022", "#FFFFFF"], "bright": 0.5},
-  {"t": 183.95, "section": "Blackout", "fx": "Wave", "colors": ["#000000"], "bright": 0.5}
+  {"t": 183.95, "section": "Blackout", "fx": "Off", "colors": ["#000000"], "bright": 0.5}
  ]
 }
