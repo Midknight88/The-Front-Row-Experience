@@ -54,7 +54,7 @@ In the app, edit a show and tap **Send to Claude**. It copies a message with the
 
 Built-in profiles are in `BUILTIN_PROFILES` in `index.html`. **+ Bluetooth** lists every known stick type in one chooser and detects the type by name (then by service); sticks that share a service get a Type switch in their row. Templates use hex bytes plus `{r} {g} {b} {w}`, and `{sumN}` for a checksum (sum of bytes N..here, low 8 bits).
 
-- **P1Harmony** (Fanlight app, unencrypted): service `00010203-0405-0607-0809-0a0b0c0d1911`, characteristic `…0d2b19`, written with response. Ver.1: `01 01 0B 00 00 RR GG BB 00 00 SUM`; Ver.2: `01 FF 00 RR GG BB 00 00 SUM`; SUM = bytes from position 2 added up, low 8 bits. Sticks advertise as `P1H LIGHT STICK` (`…2` for Ver.2 is a guess).
-- **MONSTA X V3** (Soundwave app, same Bluetooth code as Stray Kids V2): trial profile reusing the Stray Kids command and key; its own web UI is at calvinmonstax.mycafe24.com, not yet decoded.
+- **P1Harmony** (Fanlight app, unencrypted): service `00010203-0405-0607-0809-0a0b0c0d1911`, characteristic `…0d2b19`, written with response. Ver.1: `01 01 0B 00 00 RR GG BB 00 00 SUM`; Ver.2: `01 FF 00 RR GG BB 00 00 SUM`; SUM = bytes from position 2 added up, low 8 bits. Sticks advertise as `P1H LIGHT STICK`. Confirmed on the real stick.
+- **MONSTA X V3** (Soundwave app, same Bluetooth code as Stray Kids V2): uses the Stray Kids command and key, confirmed on the real stick.
 - **BTS Ver.4** (HYBE, Flutter app): has a 32-character device encryption key; protocol not decoded yet (needs the app's arm64 split).
  The Stray Kids Light Stick V2 protocol: service and characteristic `0x0000`, 16-byte command `82 01 RR GG BB 00 00 00 00 00 FD 47 52 41 56 45`, AES-128-ECB encrypted, written with response about every 70 ms.
