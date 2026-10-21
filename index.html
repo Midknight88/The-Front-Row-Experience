@@ -3,7 +3,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=Figtree:wght@400;600&display=swap">
 <style>
-/* Layout: one-column phone console — stage of glowing sticks on top, mixer-style controls below */
+/* Layout: one-column phone console — stage of glowing sticks and a "now playing" strip on top, three tabs of controls below */
 :root{
   --bg:#0c0b14; --panel:#16141f; --line:#2a2638; --fg:#ece9f5; --muted:#8f89a6; --accent:#ff5fa2; --ok:#4fd1a5; --warn:#ffb547;
   --display:"Bricolage Grotesque",system-ui,sans-serif; --body:"Figtree",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
@@ -17,26 +17,40 @@ h2{font-family:var(--display);font-weight:500;font-size:1.05rem;margin:0}
 .sub{color:var(--muted);margin:4px 0 0;font-size:.9rem}
 .label{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 section{display:flex;flex-direction:column;gap:10px}
-.stage{position:relative;border-radius:18px;background:radial-gradient(120% 90% at 50% 110%,#1d1930 0%,var(--bg) 70%);border:1px solid var(--line);padding:22px 12px 14px;display:flex;justify-content:center;gap:clamp(8px,4vw,26px);flex-wrap:wrap;min-height:220px;align-items:flex-end}
+.stage{position:relative;border-radius:18px;background:radial-gradient(120% 90% at 50% 110%,#1d1930 0%,var(--bg) 70%);border:1px solid var(--line);padding:22px 12px 14px;display:flex;justify-content:center;gap:clamp(8px,4vw,26px);flex-wrap:wrap;min-height:200px;align-items:flex-end}
 .stick{display:flex;flex-direction:column;align-items:center;gap:6px;width:56px}
 .bulb{width:46px;height:46px;border-radius:50%;background:var(--c,#333);box-shadow:0 0 calc(var(--b,1)*28px) calc(var(--b,1)*8px) var(--c,#000);opacity:calc(.25 + var(--b,1)*.75);transition:background .05s}
 .shape-heart .bulb{border-radius:50% 50% 12px 50%;transform:rotate(45deg)}
 .shape-star .bulb{clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);box-shadow:none;filter:drop-shadow(0 0 calc(var(--b,1)*14px) var(--c))}
 .shape-cube .bulb{border-radius:10px}
-.handle{width:12px;height:70px;border-radius:6px;background:linear-gradient(#3a3550,#221f30)}
+.handle{width:12px;height:60px;border-radius:6px;background:linear-gradient(#3a3550,#221f30)}
 .sname{font-family:var(--mono);font-size:.65rem;color:var(--muted);text-align:center;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin-right:4px}
 .dot.live{background:var(--ok)}
+.now{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+.now .sec{font-family:var(--display);font-weight:800;font-size:1.15rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.now .bpm{font-family:var(--display);font-weight:800;font-size:1.6rem;font-variant-numeric:tabular-nums;line-height:1;text-align:right}
+.now .meta{font-family:var(--mono);font-size:.72rem;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.beatdots{display:flex;gap:5px;justify-content:flex-end}
+.beatdots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.beatdots i.on{background:var(--accent)}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:6px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.tabs button[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
 .swatches{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
-.sw{aspect-ratio:1;border-radius:50%;border:2px solid transparent;cursor:pointer;max-width:100%}
+.sw{aspect-ratio:1;border-radius:50%;border:2px solid transparent;cursor:pointer;max-width:100%;padding:0}
 .sw[aria-pressed="true"]{border-color:var(--fg);box-shadow:0 0 0 2px var(--bg) inset}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 button{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 button.primary{background:var(--accent);border-color:var(--accent);color:#1a0010;font-weight:600}
 button.ghost{background:transparent}
+button.small{padding:6px 10px;font-size:.8rem}
+button:disabled{opacity:.35;cursor:default}
+.listening{background:color-mix(in srgb,var(--ok) 25%,var(--panel))!important;border-color:var(--ok)!important;color:var(--fg)!important}
 .slider{display:grid;grid-template-columns:90px 1fr 48px;gap:10px;align-items:center}
 .slider output{font-family:var(--mono);font-size:.8rem;text-align:right;font-variant-numeric:tabular-nums}
 input[type=range]{width:100%;accent-color:var(--accent)}
@@ -44,26 +58,38 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .dev{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
 .dev:first-child{border-top:0}
 .dev .meta{min-width:0}
-.dev .ctl{grid-column:2/-1;display:flex;gap:6px;flex-wrap:wrap}
-.dev .ctl button{padding:6px 10px;font-size:.8rem}
-.dev .ctl button:disabled{opacity:.35;cursor:default}
 .dev .meta b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dev .meta span{font-family:var(--mono);font-size:.7rem;color:var(--muted)}
-.chip{font-family:var(--mono);font-size:.65rem;padding:3px 7px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.dev .ctl{grid-column:2/-1;display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-family:var(--mono);font-size:.65rem;padding:3px 7px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
 .chip.ble{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 50%,transparent)}
+.chip.draft{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 50%,transparent)}
+.lib{display:flex;flex-direction:column}
+.libitem{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;padding:10px 8px;border-radius:10px;border:1px solid transparent;cursor:pointer;background:none;text-align:left;width:100%}
+.libitem[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--fg)}
+.libitem b{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.libitem span{font-family:var(--mono);font-size:.7rem;color:var(--muted)}
 .cue{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;font-size:.9rem;padding:6px 8px;border-radius:8px}
 .cue.on{background:color-mix(in srgb,var(--accent) 18%,transparent)}
-.cue .n{font-family:var(--mono);color:var(--muted);font-size:.75rem}
+.cue .n{font-family:var(--mono);color:var(--muted);font-size:.75rem;font-variant-numeric:tabular-nums}
 .cue .bar{display:flex;gap:3px}
 .cue .bar i{width:14px;height:14px;border-radius:4px}
+.ecue{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.ecue.on{border-color:var(--accent)}
+.ecue .full{grid-column:1/-1}
+.ecue .colors{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ecue input[type=color]{width:38px;height:32px;border:1px solid var(--line);border-radius:8px;background:none;padding:2px}
 details{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--panel)}
 summary{cursor:pointer;font-weight:600}
-.field{display:flex;flex-direction:column;gap:4px}
-.field input,.field select{font-family:var(--mono);font-size:.8rem;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field input,.field select,textarea{font-family:var(--mono);font-size:.8rem;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px;width:100%;box-sizing:border-box}
+textarea{min-height:120px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .note{font-size:.82rem;color:var(--muted);margin:0}
 .note.warn{color:var(--warn)}
+.note.ok{color:var(--ok)}
 code{font-family:var(--mono);font-size:.78rem}
-.bpm{font-family:var(--display);font-weight:800;font-size:2rem;font-variant-numeric:tabular-nums;line-height:1}
+.bigbtn{font-family:var(--display);font-weight:800;font-size:1.2rem;padding:16px}
 @media (prefers-reduced-motion:reduce){.bulb{transition:none}}
 </style>
 
@@ -76,109 +102,201 @@ code{font-family:var(--mono);font-size:.78rem}
 
   <div class="stage" id="stage" aria-label="Connected light sticks"></div>
 
-  <section>
-    <div class="row" style="justify-content:space-between">
-      <h2>Color</h2><span class="label" id="hexOut">#FF5FA2</span>
-    </div>
-    <div class="swatches" id="swatches"></div>
-  </section>
+  <div class="now" aria-live="polite">
+    <div class="sec" id="nowSec">Live control</div>
+    <div class="bpm" id="nowBpm">120</div>
+    <div class="meta" id="nowMeta">Tempo: manual</div>
+    <div class="beatdots" id="beatDots"><i></i><i></i><i></i><i></i></div>
+  </div>
 
-  <section>
-    <h2>Effect</h2>
-    <div class="seg" id="effects"></div>
-    <div class="slider"><label for="bright">Brightness</label><input id="bright" type="range" min="5" max="100" value="90"><output id="brightOut">90%</output></div>
-    <div class="slider"><label for="spread">Spread</label><input id="spread" type="range" min="0" max="100" value="35"><output id="spreadOut">35%</output></div>
-  </section>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-live" aria-selected="true" aria-controls="pane-live">Live</button>
+    <button role="tab" id="tab-shows" aria-selected="false" aria-controls="pane-shows">Shows</button>
+    <button role="tab" id="tab-sticks" aria-selected="false" aria-controls="pane-sticks">Sticks</button>
+  </div>
 
-  <section class="panel">
-    <div class="row" style="justify-content:space-between">
-      <div><div class="label">Tempo</div><div class="bpm" id="bpmOut">120</div></div>
+  <!-- ================= LIVE ================= -->
+  <div id="pane-live" role="tabpanel" class="wrap" style="gap:18px">
+    <section class="panel">
+      <div class="row between">
+        <div><div class="label">Tempo</div><div class="note" id="tempoNote">Tap along, or let the app listen to the song.</div></div>
+      </div>
+      <button id="listen" class="bigbtn">Listen to the music</button>
       <div class="row">
         <button id="bpmDown" aria-label="Slower">−</button>
-        <button id="tap" class="primary">Tap beat</button>
+        <button id="tap" class="primary" style="flex:1">Tap beat</button>
         <button id="bpmUp" aria-label="Faster">+</button>
+        <button id="halfBpm" class="small" title="Halve the tempo">½×</button>
+        <button id="dblBpm" class="small" title="Double the tempo">2×</button>
       </div>
-    </div>
-    <p class="note">Tap along to the song four or more times. Pulse, strobe, chase and wave lock to this tempo.</p>
-  </section>
+      <p class="note">Listening uses the phone's microphone, so it works with music from any app or speaker. Hold the phone near the speaker for the first few seconds.</p>
+    </section>
 
-  <section class="panel">
-    <div class="row" style="justify-content:space-between">
-      <h2>Show sequence</h2>
-      <button id="playShow" class="primary">Play show</button>
-    </div>
-    <div id="cues"></div>
-    <p class="note">Each cue lasts 8 beats. This is how venue shows work: a pre-planned cue list fired in time with the music.</p>
-  </section>
+    <section>
+      <div class="row between"><h2>Color</h2><span class="label" id="hexOut">#FF5FA2</span></div>
+      <div class="swatches" id="swatches"></div>
+    </section>
 
-  <section class="panel">
-    <div class="row" style="justify-content:space-between">
-      <h2>Sticks</h2>
-      <div class="row"><button id="addVirtual" class="ghost">+ Virtual</button><button id="addBle" class="primary">+ Bluetooth</button></div>
-    </div>
-    <div id="devices"></div>
-    <p class="note warn" id="bleNote" hidden></p>
-  </section>
+    <section>
+      <h2>Effect</h2>
+      <div class="seg" id="effects"></div>
+      <div class="slider"><label for="bright">Brightness</label><input id="bright" type="range" min="5" max="100" value="90"><output id="brightOut">90%</output></div>
+      <div class="slider"><label for="spread">Spread</label><input id="spread" type="range" min="0" max="100" value="35"><output id="spreadOut">35%</output></div>
+    </section>
+  </div>
 
-  <details>
-    <summary>Bluetooth protocol profile</summary>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
-      <p class="note">Each brand of stick listens for color commands on its own Bluetooth characteristic. The Stray Kids V2 profile is built in, decoded from the official app. Add others the same way. Bytes are hex; <code>{r} {g} {b} {w}</code> are filled in live.</p>
-      <div class="field"><label class="label" for="pName">Profile</label>
-        <select id="pName"></select></div>
-      <div class="field"><label class="label" for="pNamePrefix">Device name starts with</label><input id="pNamePrefix" placeholder="e.g. FANLIGHT"></div>
-      <div class="field"><label class="label" for="pSvc">Service UUID</label><input id="pSvc" placeholder="0000xxxx-0000-1000-8000-00805f9b34fb"></div>
-      <div class="field"><label class="label" for="pChr">Write characteristic UUID</label><input id="pChr" placeholder="0000xxxx-0000-1000-8000-00805f9b34fb"></div>
-      <div class="field"><label class="label" for="pTpl">Color command template</label><input id="pTpl" placeholder="7E 07 05 03 {r} {g} {b} 10 EF"></div>
-      <div class="field"><label class="label" for="pKey">AES-128 key (hex, optional)</label><input id="pKey" placeholder="leave blank if commands aren't encrypted"></div>
-      <div class="field"><label class="label" for="pResp">Write type</label><select id="pResp"><option value="0">Without response (faster)</option><option value="1">With response</option></select></div>
-      <div class="row"><button id="saveProfile">Save profile</button><span class="note" id="profileMsg"></span></div>
-    </div>
-  </details>
+  <!-- ================= SHOWS ================= -->
+  <div id="pane-shows" role="tabpanel" class="wrap" style="gap:18px" hidden>
+    <section class="panel">
+      <div class="row between"><h2>Show library</h2><span class="label" id="libCount"></span></div>
+      <div class="lib" id="lib"></div>
+    </section>
+
+    <section class="panel">
+      <div class="row between"><h2 id="playTitle">Play</h2><span class="label" id="playClock">0:00.0</span></div>
+      <div class="field">
+        <label class="label" for="songFile">Song file (optional, gives perfect sync)</label>
+        <input id="songFile" type="file" accept="audio/*">
+      </div>
+      <p class="note" id="songNote">No file? Play the song in any app, then tap Start on the very first beat.</p>
+      <div class="row">
+        <button id="showStart" class="primary" style="flex:1">Start</button>
+        <button id="showStop">Stop</button>
+      </div>
+      <div class="row">
+        <span class="label">Nudge</span>
+        <button id="nudgeBack" class="small">−0.1 s</button>
+        <button id="nudgeFwd" class="small">+0.1 s</button>
+        <button id="markBtn" class="small" disabled title="While playing, set the next cue to start now">Mark next section</button>
+      </div>
+      <p class="note" id="markNote">Timings off? While the song plays, tap <b>Mark next section</b> each time the song changes section. Then save.</p>
+      <div id="cues"></div>
+    </section>
+
+    <details id="editor">
+      <summary>Edit this show</summary>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+        <div class="grid2">
+          <div class="field"><label class="label" for="eTitle">Song</label><input id="eTitle"></div>
+          <div class="field"><label class="label" for="eArtist">Artist</label><input id="eArtist"></div>
+          <div class="field"><label class="label" for="eBpm">Song tempo (BPM)</label><input id="eBpm" type="number" min="40" max="240" step="0.5"></div>
+          <div class="field"><label class="label" for="eTempoMode">Tempo during show</label>
+            <select id="eTempoMode"><option value="show">From the show</option><option value="listen">Listen to the music</option></select></div>
+        </div>
+        <div id="ecues" style="display:flex;flex-direction:column;gap:10px"></div>
+        <div class="row">
+          <button id="addCue">+ Add cue</button>
+          <button id="saveShow" class="primary">Save show</button>
+          <button id="dupShow" class="ghost">Duplicate</button>
+          <button id="delShow" class="ghost">Delete</button>
+        </div>
+        <p class="note" id="saveNote"></p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Build a show with Claude</summary>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+        <p class="note">Ask Claude for a show by naming a song, for example "Make a Front Row show for Stray Kids – S-Class". Claude replies with show code; paste it below. Copy the prompt to give Claude the exact format.</p>
+        <button id="copyPrompt">Copy prompt for Claude</button>
+        <div class="field"><label class="label" for="importBox">Paste show code</label><textarea id="importBox" placeholder='{"format":"front-row-show/1", ...}'></textarea></div>
+        <div class="row"><button id="importBtn" class="primary">Add to library</button><button id="exportBtn">Show code for this show</button></div>
+        <p class="note" id="importNote"></p>
+      </div>
+    </details>
+  </div>
+
+  <!-- ================= STICKS ================= -->
+  <div id="pane-sticks" role="tabpanel" class="wrap" style="gap:18px" hidden>
+    <section class="panel">
+      <div class="row between">
+        <h2>Sticks</h2>
+        <div class="row"><button id="addVirtual" class="ghost">+ Virtual</button><button id="addBle" class="primary">+ Bluetooth</button></div>
+      </div>
+      <div id="devices"></div>
+      <p class="note warn" id="bleNote" hidden></p>
+    </section>
+
+    <details>
+      <summary>Bluetooth protocol profile</summary>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+        <p class="note">Each brand of stick listens for color commands on its own Bluetooth characteristic. The Stray Kids V2 profile is built in, decoded from the official app. Bytes are hex; <code>{r} {g} {b} {w}</code> are filled in live.</p>
+        <div class="field"><label class="label" for="pName">Profile</label><select id="pName"></select></div>
+        <div class="field"><label class="label" for="pNamePrefix">Device name starts with</label><input id="pNamePrefix" placeholder="e.g. FANLIGHT"></div>
+        <div class="field"><label class="label" for="pSvc">Service UUID</label><input id="pSvc" placeholder="0000xxxx-0000-1000-8000-00805f9b34fb"></div>
+        <div class="field"><label class="label" for="pChr">Write characteristic UUID</label><input id="pChr" placeholder="0000xxxx-0000-1000-8000-00805f9b34fb"></div>
+        <div class="field"><label class="label" for="pTpl">Color command template</label><input id="pTpl" placeholder="7E 07 05 03 {r} {g} {b} 10 EF"></div>
+        <div class="field"><label class="label" for="pKey">AES-128 key (hex, optional)</label><input id="pKey" placeholder="leave blank if commands aren't encrypted"></div>
+        <div class="field"><label class="label" for="pResp">Write type</label><select id="pResp"><option value="0">Without response (faster)</option><option value="1">With response</option></select></div>
+        <div class="row"><button id="saveProfile">Save profile</button><span class="note" id="profileMsg"></span></div>
+      </div>
+    </details>
+  </div>
 </div>
 
 <script>
 (() => {
+// ================= constants =================
 const COLORS=["#FF5FA2","#FF2D2D","#FF8A00","#FFD400","#3DFF7A","#00E5FF","#3D6BFF","#A24BFF","#FFFFFF","#FF4FD8","#9B111E","#6CF0C2","#C7A6FF","#FFB0C8","#00A86B","#B8860B"];
-const EFFECTS=["Solid","Pulse","Strobe","Rainbow","Wave","Chase"];
-const CUES=[
-  {fx:"Solid",colors:["#3D6BFF"],label:"Intro · calm blue"},
-  {fx:"Pulse",colors:["#A24BFF"],label:"Verse · slow breath"},
-  {fx:"Wave",colors:["#FF5FA2","#3D6BFF"],label:"Pre-chorus · wave"},
-  {fx:"Strobe",colors:["#FFFFFF"],label:"Drop · white strobe"},
-  {fx:"Chase",colors:["#FF2D2D","#FFD400","#3DFF7A"],label:"Chorus · color chase"},
-  {fx:"Rainbow",colors:[],label:"Bridge · rainbow"},
-  {fx:"Solid",colors:["#FF5FA2"],label:"Outro · fandom pink"}
-];
+const EFFECTS=["Solid","Pulse","Strobe","Rainbow","Wave","Chase","Sparkle","Off"];
 const BUILTIN_PROFILES={
   "Generic (fill in)":{prefix:"",svc:"",chr:"",tpl:"{r} {g} {b}"},
   "Stray Kids Light Stick V2":{prefix:"STRAY KIDS",svc:"00000000-0000-1000-8000-00805f9b34fb",chr:"00000000-0000-1000-8000-00805f9b34fb",tpl:"82 01 {r} {g} {b} 00 00 00 00 00 FD 47 52 41 56 45",key:"2174516473A1F5351004A13E6B716AB9",resp:true,gap:70},
   "ELK-BLEDOM LED strip (test rig)":{prefix:"ELK-BLEDOM",svc:"0000fff0-0000-1000-8000-00805f9b34fb",chr:"0000fff3-0000-1000-8000-00805f9b34fb",tpl:"7E 07 05 03 {r} {g} {b} 10 EF"}
 };
+// A built-in demo so the Shows tab is never empty. More shows load from shows/index.json in the GitHub repo.
+const DEMO_SHOW={format:"front-row-show/1",id:"demo-generic",title:"Any song (demo)",artist:"Works with anything",bpm:120,tempo:"listen",
+  notes:"A general-purpose show that follows the song's tempo. 8-bar sections, typical K-pop layout.",
+  cues:[
+    {t:0,section:"Intro",fx:"Pulse",colors:["#3D6BFF"],bright:.6},
+    {t:16,section:"Verse",fx:"Wave",colors:["#A24BFF","#3D6BFF"],bright:.8},
+    {t:32,section:"Pre-chorus",fx:"Pulse",colors:["#FF4FD8"],bright:.9},
+    {t:48,section:"Chorus",fx:"Chase",colors:["#FF2D2D","#FFD400","#FF5FA2"],bright:1},
+    {t:64,section:"Verse 2",fx:"Wave",colors:["#00E5FF","#3D6BFF"],bright:.8},
+    {t:80,section:"Chorus",fx:"Strobe",colors:["#FFFFFF"],bright:1},
+    {t:96,section:"Bridge",fx:"Rainbow",colors:[],bright:.7},
+    {t:112,section:"Final chorus",fx:"Sparkle",colors:["#FF5FA2","#FFFFFF","#A24BFF"],bright:1},
+    {t:128,section:"Outro",fx:"Solid",colors:["#FF5FA2"],bright:.5}
+  ]};
 
-const st={color:"#FF5FA2",fx:"Solid",bright:.9,spread:.35,bpm:120,showOn:false,showStart:0,devices:[],profiles:{...BUILTIN_PROFILES},profile:"Stray Kids Light Stick V2"};
+// ================= state =================
+const st={color:"#FF5FA2",fx:"Solid",bright:.9,spread:.35,
+  bpm:120,anchor:0,              // beat clock: beat = (t - anchor) * bpm / 60   (t in seconds, performance clock)
+  tempoSrc:"manual",             // manual | tap | listen | show
+  devices:[],profiles:{...BUILTIN_PROFILES},profile:"Stray Kids Light Stick V2",
+  shows:{},showId:null,          // library
+  play:{on:false,startPerf:0,nudge:0,cue:-1,mark:0,file:false}};
 try{const p=JSON.parse(localStorage.getItem("lsu.profiles")||"null");if(p)Object.assign(st.profiles,p)}catch(e){}
 
 const $=id=>document.getElementById(id);
-const hex2rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
-const rgb2hex=c=>"#"+c.map(v=>Math.round(v).toString(16).padStart(2,"0")).join("").toUpperCase();
+const hex2rgb=h=>[1,3,5].map(i=>parseInt((h||"#000000").slice(i,i+2),16)||0);
+const rgb2hex=c=>"#"+c.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,"0")).join("").toUpperCase();
 const hsv=(h,s=1,v=1)=>{const f=n=>{const k=(n+h*6)%6;return v-v*s*Math.max(0,Math.min(k,4-k,1))};return[f(5)*255,f(3)*255,f(1)*255]};
 const mix=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+const nowS=()=>performance.now()/1000;
+function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+const fmtT=s=>{s=Math.max(0,s);const m=Math.floor(s/60);return m+":"+(s-m*60).toFixed(1).padStart(4,"0")};
+const parseT=v=>{v=String(v).trim();if(!v)return 0;if(v.includes(":")){const [m,s]=v.split(":");return (+m||0)*60+(+s||0)}return +v||0};
 
-// ---------- devices ----------
+// ---------- beat clock ----------
+function beatNow(t=nowS()){return (t-st.anchor)*st.bpm/60}
+function setBpm(v,src){                     // keep the current beat position continuous when tempo changes
+  v=Math.max(40,Math.min(240,v));const t=nowS(),b=beatNow(t);
+  st.bpm=v;st.anchor=t-b*60/v;if(src)st.tempoSrc=src;
+}
+function setBeatAt(bpm,beatZeroTime){st.bpm=Math.max(40,Math.min(240,bpm));st.anchor=beatZeroTime}
+
+// ================= devices =================
 const SHAPES=["","shape-heart","shape-star","shape-cube"];
 function addVirtual(name){
   const n=st.devices.length;
   st.devices.push({id:crypto.randomUUID?crypto.randomUUID():String(Math.random()),name:name||`Stick ${n+1}`,kind:"virtual",shape:SHAPES[n%SHAPES.length],last:""});
   render();
 }
-
 function parseTpl(tpl,rgb){
-  const [r,g,b]=rgb.map(v=>Math.round(v));const w=Math.min(r,g,b);
-  const map={r,g,b,w};
+  const [r,g,b]=rgb.map(v=>Math.round(v));const w=Math.min(r,g,b);const map={r,g,b,w};
   return new Uint8Array(tpl.trim().split(/\s+/).map(t=>{const m=t.match(/^\{([rgbw])\}$/);return m?map[m[1]]:parseInt(t,16)&255}));
 }
-
 // AES-128-ECB of one 16-byte block = first block of AES-CBC with a zero IV
 const keyCache={};
 async function aesBlock(keyHex,data){
@@ -207,7 +325,7 @@ async function addBle(){
   }
 }
 async function sendBle(d,rgb){
-  const key=rgb.map(v=>Math.round(v/4)).join(",");          // skip near-identical frames
+  const key=rgb.map(v=>Math.round(v/4)).join(",");
   const now=performance.now();
   if(d.busy||key===d.last||now-d.lastSend<d.gap)return;     // pace writes per stick (official SKZ app: 70 ms)
   d.busy=true;d.last=key;d.lastSend=now;
@@ -217,40 +335,6 @@ async function sendBle(d,rgb){
     else if(d.chr.writeValueWithoutResponse)await d.chr.writeValueWithoutResponse(data);else await d.chr.writeValue(data);
   }catch(e){}finally{d.busy=false}
 }
-
-// ---------- effect engine ----------
-function frameColor(fx,colors,i,n,t){
-  const beat=t*st.bpm/60, ph=beat%1, off=n>1?i/(n-1)*st.spread:0;
-  const base=hex2rgb(colors[0]||st.color);
-  switch(fx){
-    case"Solid":return[base,1];
-    case"Pulse":return[base,.15+.85*Math.pow(1-((beat-off)%1+1)%1,2)];
-    case"Strobe":return[base,ph<.12?1:0];
-    case"Rainbow":return[hsv(((beat/8)+off)%1),1];
-    case"Wave":{const k=.5+.5*Math.sin((beat/2-off*2)*Math.PI*2);const c2=hex2rgb(colors[1]||"#000000");return[mix(base,c2,k),1]}
-    case"Chase":{const pal=(colors.length?colors:[st.color]).map(hex2rgb);const step=Math.floor(beat)+i;return[pal[step%pal.length],Math.floor(beat)%Math.max(n,1)===i?1:.35]}
-  }
-  return[base,1];
-}
-
-function tick(now){
-  const t=now/1000;let fx=st.fx,colors=[st.color],cueIdx=-1;
-  if(st.showOn){
-    const beats=(t-st.showStart)*st.bpm/60;cueIdx=Math.floor(beats/8);
-    if(cueIdx>=CUES.length){stopShow();cueIdx=-1}else{fx=CUES[cueIdx].fx;colors=CUES[cueIdx].colors}
-  }
-  markCue(cueIdx);
-  const active=st.devices.filter(d=>d.kind!=="lost"),n=active.length;
-  active.forEach((d,i)=>{
-    let [rgb,lvl]=frameColor(fx,colors,i,n,t);let b=lvl*st.bright;
-    if(d.identUntil>now){rgb=[255,255,255];b=Math.floor(now/250)%2?1:0}   // Identify: blink white for 3 s
-    if(d.el){d.el.style.setProperty("--c",rgb2hex(rgb));d.el.style.setProperty("--b",b.toFixed(3))}
-    if(d.kind==="ble")sendBle(d,rgb.map(v=>v*b));
-  });
-  requestAnimationFrame(tick);
-}
-
-// ---------- UI ----------
 // Remember the shelf order of Bluetooth sticks (Chrome keeps device ids stable per site)
 function loadOrder(){try{return JSON.parse(localStorage.getItem("fre.order")||"[]")}catch(e){return[]}}
 function saveOrder(){const ids=st.devices.filter(d=>d.kind!=="virtual").map(d=>d.id);const old=loadOrder().filter(x=>!ids.includes(x));
@@ -266,6 +350,316 @@ function moveDevice(d,step){
   const i=st.devices.indexOf(d),j=i+step;if(j<0||j>=st.devices.length)return;
   [st.devices[i],st.devices[j]]=[st.devices[j],st.devices[i]];saveOrder();render();
 }
+
+// ================= effect engine =================
+function hash(a,b){let h=(a*374761393+b*668265263)|0;h=(h^(h>>>13))*1274126177|0;return ((h^(h>>>16))>>>0)/4294967296}
+function frameColor(fx,colors,i,n,beat,spread){
+  const ph=((beat%1)+1)%1, off=n>1?i/(n-1)*spread:0;
+  const pal=(colors&&colors.length?colors:[st.color]).map(hex2rgb), base=pal[0];
+  switch(fx){
+    case"Off":return[[0,0,0],0];
+    case"Solid":return[base,1];
+    case"Pulse":return[base,.15+.85*Math.pow(1-((beat-off)%1+1)%1,2)];
+    case"Strobe":return[base,ph<.12?1:0];
+    case"Rainbow":return[hsv((((beat/8)+off)%1+1)%1),1];
+    case"Wave":{const k=.5+.5*Math.sin((beat/2-off*2)*Math.PI*2);const c2=pal[1]||[0,0,0];return[mix(base,c2,k),1]}
+    case"Chase":{const b=Math.floor(beat);return[pal[((b+i)%pal.length+pal.length)%pal.length],((b%Math.max(n,1))+n)%Math.max(n,1)===i?1:.35]}
+    case"Sparkle":{const s=Math.floor(beat*2),r=hash(s,i+1);const c=pal[Math.floor(hash(s,i+101)*pal.length)];return[c,r<.45?1:.12]}
+  }
+  return[base,1];
+}
+
+// ================= show playback =================
+const curShow=()=>st.shows[st.showId];
+function showClock(){
+  const p=st.play;if(!p.on)return 0;
+  if(p.file&&audio.ctx&&audio.src)return audio.ctx.currentTime-audio.startAt+p.nudge;
+  return nowS()-p.startPerf+p.nudge;
+}
+function cueAt(show,t){let k=-1;show.cues.forEach((c,i)=>{if(c.t<=t+1e-6)k=i});return k}
+function enterCue(show,k){
+  const c=show.cues[k];if(!c)return;
+  const useListen=(show.tempo==="listen")&&listen.on;
+  if(!useListen){
+    const bpm=c.bpm||show.bpm||(st.play.file&&audio.analysis?audio.analysis.bpm:0)||st.bpm;
+    // sections begin on a downbeat: restart the beat clock exactly at the cue's time
+    const cueStartPerf=nowS()-(showClock()-c.t);
+    setBeatAt(bpm,cueStartPerf);st.tempoSrc="show";
+  }
+}
+
+function tick(nowMs){
+  const t=nowMs/1000;
+  let fx=st.fx,colors=[st.color],bright=st.bright,spread=st.spread,secLabel="Live control";
+  const show=curShow();
+  if(st.play.on&&show){
+    const clk=showClock(),k=cueAt(show,clk);
+    if(k!==st.play.cue){st.play.cue=k;enterCue(show,k);markCue(k)}
+    const c=show.cues[k];
+    if(c){fx=c.fx||"Solid";colors=c.colors||[];bright=c.bright??1;spread=c.spread??st.spread;secLabel=c.section||`Cue ${k+1}`}
+    else{fx="Off";secLabel="Waiting for first cue"}
+    $("playClock").textContent=fmtT(clk);
+    if(show.duration&&clk>show.duration+2)stopShow();
+  }
+  const beat=beatNow(t);
+  const active=st.devices.filter(d=>d.kind!=="lost"),n=active.length;
+  active.forEach((d,i)=>{
+    let [rgb,lvl]=frameColor(fx,colors,i,n,beat,spread);let b=lvl*bright;
+    if(d.identUntil>nowMs){rgb=[255,255,255];b=Math.floor(nowMs/250)%2?1:0}   // Identify: blink white for 3 s
+    if(d.el){d.el.style.setProperty("--c",rgb2hex(rgb));d.el.style.setProperty("--b",b.toFixed(3))}
+    if(d.kind==="ble")sendBle(d,rgb.map(v=>v*b));
+  });
+  // now-playing strip
+  $("nowSec").textContent=st.play.on&&show?`${show.title} · ${secLabel}`:secLabel;
+  $("nowBpm").textContent=Math.round(st.bpm);
+  const srcTxt={manual:"Tempo: manual",tap:"Tempo: tapped",listen:"Tempo: listening"+(listen.conf?` · ${Math.round(listen.conf*100)}% sure`:" · finding the beat…"),show:"Tempo: from the show"}[st.tempoSrc];
+  $("nowMeta").textContent=srcTxt;
+  const bi=((Math.floor(beat)%4)+4)%4;
+  [...$("beatDots").children].forEach((d,i)=>d.classList.toggle("on",i===bi&&(((beat%1)+1)%1)<.5));
+  requestAnimationFrame(tick);
+}
+
+// ================= tempo detection =================
+// Onset strength = rise in low-frequency energy. Tempo = strongest periodicity of that signal (comb-filtered autocorrelation).
+function estimateTempo(env,rate,minBpm=70,maxBpm=180){
+  const N=env.length;if(N<rate*4)return null;
+  let mean=0;for(const v of env)mean+=v;mean/=N;
+  const x=env.map(v=>v-mean);
+  const ac=lag=>{const L=Math.floor(lag),f=lag-L;let s=0;for(let i=L+1;i<N;i++)s+=x[i]*(x[i-L]*(1-f)+x[i-L-1]*f);return s/(N-L)};
+  let best=null;
+  for(let bpm=minBpm;bpm<=maxBpm;bpm+=0.5){
+    const lag=rate*60/bpm;
+    let s=ac(lag)+.5*ac(lag*2)+.25*(lag/2>=2?ac(lag/2):0);
+    const w=Math.exp(-.5*Math.pow(Math.log2(bpm/120)/.9,2));      // mild preference for 90–150 BPM
+    s*=w;if(!best||s>best.s)best={bpm,s};
+  }
+  // confidence: normalized autocorrelation at the beat period (near 0 for noise or talking)
+  const a0=ac(0)||1e-9,conf=Math.max(0,Math.min(1,ac(rate*60/best.bpm)/a0*2));
+  // phase: offset (in samples) where beats line up best
+  const lag=rate*60/best.bpm;let bestP=0,bestV=-1e9;
+  for(let p=0;p<lag;p+=0.5){let v=0;for(let k=p;k<N;k+=lag){const i=Math.round(k);if(i<N)v+=x[i]}if(v>bestV){bestV=v;bestP=p}}
+  return{bpm:best.bpm,phase:bestP/rate,conf};
+}
+const listen={on:false,ctx:null,stream:null,node:null,env:[],times:[],rate:0,prev:0,hist:[],conf:0,timer:null};
+async function startListening(){
+  const btn=$("listen");
+  if(listen.on){stopListening();return}
+  if(!navigator.mediaDevices?.getUserMedia){$("tempoNote").textContent="This browser can't use the microphone here. Open the app from its web address in Chrome.";return}
+  try{
+    listen.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+  }catch(e){$("tempoNote").textContent=e.name==="NotAllowedError"?"Microphone access was blocked. Allow it for this site in Chrome's site settings, then try again.":"Couldn't start the microphone: "+e.message;return}
+  const ctx=listen.ctx=new (window.AudioContext||window.webkitAudioContext)();
+  const src=ctx.createMediaStreamSource(listen.stream);
+  const lp=ctx.createBiquadFilter();lp.type="lowpass";lp.frequency.value=200;
+  const hop=512,node=ctx.createScriptProcessor(1024,1,1);listen.node=node;listen.rate=ctx.sampleRate/hop;
+  listen.env=[];listen.times=[];listen.prev=0;listen.hist=[];listen.conf=0;
+  node.onaudioprocess=e=>{
+    const d=e.inputBuffer.getChannelData(0),t0=e.playbackTime;
+    for(let o=0;o<d.length;o+=hop){let s=0;for(let i=o;i<o+hop;i++)s+=d[i]*d[i];
+      const lg=Math.log(1e-9+s),on=Math.max(0,lg-listen.prev);listen.prev=lg*.6+listen.prev*.4;
+      listen.env.push(on);listen.times.push(t0+o/ctx.sampleRate);}
+    const keep=Math.floor(listen.rate*8);if(listen.env.length>keep){listen.env.splice(0,listen.env.length-keep);listen.times.splice(0,listen.times.length-keep)}
+  };
+  const mute=ctx.createGain();mute.gain.value=0;
+  src.connect(lp);lp.connect(node);node.connect(mute);mute.connect(ctx.destination);
+  listen.on=true;btn.textContent="Listening… tap to stop";btn.classList.add("listening");st.tempoSrc="listen";
+  $("tempoNote").textContent="Finding the beat. This takes about 5 seconds.";
+  listen.timer=setInterval(updateListenTempo,1000);
+}
+function updateListenTempo(){
+  if(!listen.on||listen.env.length<listen.rate*4)return;
+  const r=estimateTempo(listen.env,listen.rate);if(!r)return;
+  listen.hist.push(r.bpm);if(listen.hist.length>5)listen.hist.shift();
+  const med=[...listen.hist].sort((a,b)=>a-b)[Math.floor(listen.hist.length/2)];
+  listen.conf=listen.conf*.6+r.conf*.4;
+  if(listen.conf<.25)return;                                   // too unsure (quiet room, talking)
+  const show=curShow(),showOverride=st.play.on&&show&&show.tempo!=="listen";
+  if(showOverride)return;
+  // convert the detected beat phase (audio clock) into the performance clock
+  const audioToPerf=nowS()-listen.ctx.currentTime;
+  const firstBeatAudio=listen.times[0]+r.phase;
+  const bpm=Math.abs(med-st.bpm)/st.bpm<.02?st.bpm*.7+med*.3:med;
+  setBeatAt(bpm,firstBeatAudio+audioToPerf);st.tempoSrc="listen";
+  $("tempoNote").textContent=`Locked on at about ${Math.round(bpm)} BPM. If it feels twice as fast or slow, use ½× or 2×.`;
+}
+function stopListening(){
+  listen.on=false;clearInterval(listen.timer);
+  try{listen.node&&listen.node.disconnect();listen.stream&&listen.stream.getTracks().forEach(t=>t.stop());listen.ctx&&listen.ctx.close()}catch(e){}
+  const btn=$("listen");btn.textContent="Listen to the music";btn.classList.remove("listening");
+  st.tempoSrc="manual";$("tempoNote").textContent="Tap along, or let the app listen to the song.";
+}
+
+// ---------- song file: analyze offline, then play in sync ----------
+const audio={ctx:null,buf:null,src:null,startAt:0,analysis:null,name:""};
+async function loadSongFile(file){
+  const note=$("songNote");note.className="note";note.textContent="Reading the song…";
+  try{
+    audio.ctx=audio.ctx||new (window.AudioContext||window.webkitAudioContext)();
+    const buf=await audio.ctx.decodeAudioData(await file.arrayBuffer());audio.buf=buf;audio.name=file.name;
+    note.textContent="Finding the tempo…";
+    const off=new OfflineAudioContext(1,buf.length,buf.sampleRate);
+    const s=off.createBufferSource();s.buffer=buf;const lp=off.createBiquadFilter();lp.type="lowpass";lp.frequency.value=200;
+    s.connect(lp);lp.connect(off.destination);s.start();
+    const low=(await off.startRendering()).getChannelData(0);
+    const hop=512,rate=buf.sampleRate/hop,env=[];let prev=0;
+    for(let o=0;o+hop<=low.length;o+=hop){let e=0;for(let i=o;i<o+hop;i++)e+=low[i]*low[i];const lg=Math.log(1e-9+e);env.push(Math.max(0,lg-prev));prev=lg*.6+prev*.4}
+    // analyze up to 60 s from the middle of the song, where the beat is steadiest
+    const mid=Math.floor(env.length/2),half=Math.min(Math.floor(rate*30),mid);
+    const seg=env.slice(mid-half,mid+half),r=estimateTempo(seg,rate);
+    const segStart=(mid-half)/rate,beatLen=60/r.bpm;
+    let first=(segStart+r.phase)%beatLen;
+    audio.analysis={bpm:r.bpm,firstBeat:first,duration:buf.duration};
+    note.className="note ok";note.textContent=`${file.name}: about ${Math.round(r.bpm)} BPM, ${fmtT(buf.duration).replace(/\.\d$/,"")} long. Tap Start.`;
+    const show=curShow();if(show&&!show.bpm){show.bpm=r.bpm}
+    // suggest the matching show by file name
+    const fname=file.name.toLowerCase().replace(/[^a-z0-9]/g,"");
+    const match=Object.values(st.shows).find(sh=>fname.includes(String(sh.title).toLowerCase().replace(/[^a-z0-9]/g,"")));
+    if(match&&match.id!==st.showId){selectShow(match.id);note.textContent+=` Matched the show "${match.title}".`}
+  }catch(e){note.className="note warn";note.textContent="Couldn't read that file. Try an MP3 or M4A.";audio.buf=null}
+}
+
+function startShow(){
+  const show=curShow();if(!show)return;
+  stopShow(true);
+  const p=st.play;p.on=true;p.nudge=0;p.cue=-1;p.mark=1;
+  if(audio.buf){
+    if(audio.ctx.state==="suspended")audio.ctx.resume();
+    const s=audio.ctx.createBufferSource();s.buffer=audio.buf;s.connect(audio.ctx.destination);
+    audio.startAt=audio.ctx.currentTime+.05;s.start(audio.startAt);audio.src=s;p.file=true;
+    s.onended=()=>{if(audio.src===s)stopShow()};
+  }else{p.file=false;p.startPerf=nowS()}
+  $("showStart").textContent="Restart";$("markBtn").disabled=false;
+}
+function stopShow(quiet){
+  const p=st.play;p.on=false;p.cue=-1;
+  if(audio.src){try{audio.src.onended=null;audio.src.stop()}catch(e){}audio.src=null}
+  $("showStart").textContent="Start";$("markBtn").disabled=true;markCue(-1);
+  if(!quiet&&st.tempoSrc==="show")st.tempoSrc=listen.on?"listen":"manual";
+}
+function markNext(){
+  const show=curShow();if(!show||!st.play.on)return;
+  const t=+showClock().toFixed(2),p=st.play;
+  if(p.mark<show.cues.length){show.cues[p.mark].t=t}
+  else{const last=show.cues[show.cues.length-1]||{fx:"Solid",colors:[st.color]};show.cues.push({...JSON.parse(JSON.stringify(last)),t,section:`Section ${show.cues.length+1}`})}
+  p.mark++;show.draft=false;show.dirty=true;
+  $("markNote").innerHTML=`Marked <b>${esc(show.cues[p.mark-1].section)}</b> at ${fmtT(t)}. Tap Save show in the editor when you're done.`;
+  renderCues();renderEditor();
+}
+
+// ================= show library =================
+const MINE_KEY="fre.shows";
+function loadMine(){try{return JSON.parse(localStorage.getItem(MINE_KEY)||"{}")}catch(e){return{}}}
+function saveMine(){const mine={};Object.values(st.shows).filter(s=>s.origin==="mine").forEach(s=>{const c={...s};delete c.dirty;mine[s.id]=c});try{localStorage.setItem(MINE_KEY,JSON.stringify(mine))}catch(e){}}
+function normalizeShow(o,origin){
+  if(!o||!Array.isArray(o.cues))throw new Error("The show code needs a list of cues.");
+  const s={format:"front-row-show/1",id:o.id||("show-"+Math.random().toString(36).slice(2,8)),title:String(o.title||"Untitled show"),artist:String(o.artist||""),
+    bpm:+o.bpm||0,tempo:o.tempo==="listen"?"listen":"show",duration:+o.duration||0,draft:!!o.draft,notes:String(o.notes||""),origin,
+    cues:o.cues.map(c=>({t:typeof c.t==="string"?parseT(c.t):(+c.t||0),section:String(c.section||""),fx:EFFECTS.includes(c.fx)?c.fx:"Solid",
+      colors:(Array.isArray(c.colors)?c.colors:[]).filter(x=>/^#[0-9a-f]{6}$/i.test(x)).slice(0,4),
+      bright:c.bright==null?1:Math.max(0,Math.min(1,+c.bright)),...(c.spread!=null?{spread:Math.max(0,Math.min(1,+c.spread))}:{}),...(+c.bpm?{bpm:+c.bpm}:{})})).sort((a,b)=>a.t-b.t)};
+  return s;
+}
+function addShow(s){st.shows[s.id]=s}
+async function loadRepoShows(){
+  try{
+    const idx=await (await fetch("shows/index.json",{cache:"no-cache"})).json();
+    for(const f of (idx.shows||[])){
+      try{const o=await (await fetch("shows/"+f,{cache:"no-cache"})).json();const s=normalizeShow(o,"repo");if(!st.shows[s.id]||st.shows[s.id].origin==="repo")addShow(s)}catch(e){}
+    }
+    renderLib();
+  }catch(e){/* no repo shows (e.g. inside the Claude preview) */}
+}
+function selectShow(id){
+  stopShow();st.showId=id;try{localStorage.setItem("fre.lastShow",id)}catch(e){}
+  renderLib();renderCues();renderEditor();
+}
+function renderLib(){
+  const box=$("lib");box.innerHTML="";const list=Object.values(st.shows);
+  const order={mine:0,repo:1,builtin:2};list.sort((a,b)=>(order[a.origin]-order[b.origin])||a.title.localeCompare(b.title));
+  list.forEach(s=>{
+    const b=document.createElement("button");b.className="libitem";b.setAttribute("aria-pressed",s.id===st.showId);
+    const tag=s.origin==="mine"?"Mine":s.origin==="repo"?"From Claude":"Built in";
+    b.innerHTML=`<b>${esc(s.title)}</b><span class="chip ${s.draft?"draft":""}">${s.draft?"Draft timing":tag}</span><span>${esc(s.artist)}${s.bpm?` · ${Math.round(s.bpm)} BPM`:""} · ${s.cues.length} cues</span>`;
+    b.onclick=()=>selectShow(s.id);box.appendChild(b);
+  });
+  $("libCount").textContent=list.length+" shows";
+}
+function renderCues(){
+  const box=$("cues");box.innerHTML="";const show=curShow();if(!show)return;
+  $("playTitle").textContent=show.title;
+  show.cues.forEach((c,i)=>{
+    const r=document.createElement("div");r.className="cue";
+    const sw=c.fx==="Rainbow"?'<i style="background:linear-gradient(90deg,#f33,#fd0,#3f7,#0ef,#36f,#a4f)"></i>':c.fx==="Off"?'<i style="background:#000;border:1px solid var(--line)"></i>':(c.colors.length?c.colors:[st.color]).map(x=>`<i style="background:${x}"></i>`).join("");
+    r.innerHTML=`<span class="n">${fmtT(c.t).replace(/\.\d$/,"")}</span><span>${esc(c.section||"Cue "+(i+1))} · ${c.fx}${c.bpm?` · ${c.bpm} BPM`:""}</span><span class="bar">${sw}</span>`;
+    box.appendChild(r);
+  });
+  if(show.draft){const n=document.createElement("p");n.className="note warn";n.textContent="Draft timing: Claude planned these sections without hearing the song. Use Mark next section once to lock them in.";box.prepend(n)}
+  if(show.notes){const n=document.createElement("p");n.className="note";n.textContent=show.notes;box.appendChild(n)}
+}
+let lastMarked=-2;function markCue(k){if(k===lastMarked)return;lastMarked=k;
+  const rows=[...$("cues").querySelectorAll(".cue")];rows.forEach((r,j)=>r.classList.toggle("on",j===k));
+  [...$("ecues").children].forEach((r,j)=>r.classList.toggle("on",j===k))}
+
+// ---------- editor ----------
+function renderEditor(){
+  const show=curShow();if(!show)return;
+  $("eTitle").value=show.title;$("eArtist").value=show.artist;$("eBpm").value=show.bpm?Math.round(show.bpm*2)/2:"";$("eTempoMode").value=show.tempo;
+  const box=$("ecues");box.innerHTML="";
+  show.cues.forEach((c,i)=>{
+    const r=document.createElement("div");r.className="ecue";
+    const fxOpts=EFFECTS.map(f=>`<option ${f===c.fx?"selected":""}>${f}</option>`).join("");
+    const cols=[0,1,2].map(j=>`<input type="color" data-j="${j}" value="${c.colors[j]||"#000000"}" aria-label="Color ${j+1}" ${c.colors[j]?"":'data-empty="1"'}>`).join("");
+    r.innerHTML=`
+      <div class="field"><label class="label">Starts at</label><input data-k="t" value="${fmtT(c.t)}" inputmode="decimal"></div>
+      <div class="field"><label class="label">Section</label><input data-k="section" value="${esc(c.section)}"></div>
+      <div class="field"><label class="label">Effect</label><select data-k="fx">${fxOpts}</select></div>
+      <div class="field"><label class="label">Brightness</label><select data-k="bright">${[.25,.5,.75,1].map(v=>`<option value="${v}" ${Math.abs((c.bright??1)-v)<.13?"selected":""}>${v*100}%</option>`).join("")}</select></div>
+      <div class="field full"><label class="label">Colors (first is main; Wave, Chase and Sparkle use the rest)</label><div class="colors">${cols}<button class="small ghost" data-a="clear">Clear extra</button></div></div>
+      <div class="field"><label class="label">Tempo change (BPM)</label><input data-k="bpm" type="number" min="40" max="240" step="0.5" value="${c.bpm||""}" placeholder="same"></div>
+      <div class="field" style="justify-content:flex-end"><div class="row"><button class="small" data-a="now" ${st.play.on?"":"disabled"}>Set to now</button><button class="small ghost" data-a="del">Delete</button></div></div>`;
+    r.querySelectorAll("[data-k]").forEach(inp=>inp.onchange=()=>{
+      const k=inp.dataset.k;if(k==="t")c.t=parseT(inp.value);else if(k==="bright")c.bright=+inp.value;else if(k==="bpm"){if(+inp.value)c.bpm=+inp.value;else delete c.bpm}else c[k]=inp.value;
+      show.dirty=true;renderCues()});
+    r.querySelectorAll('input[type=color]').forEach(inp=>inp.oninput=()=>{const j=+inp.dataset.j;const arr=c.colors.slice();while(arr.length<j)arr.push(arr[arr.length-1]||"#FFFFFF");arr[j]=inp.value.toUpperCase();c.colors=arr;inp.removeAttribute("data-empty");show.dirty=true;renderCues()});
+    r.querySelector('[data-a="clear"]').onclick=()=>{c.colors=c.colors.slice(0,1);show.dirty=true;renderEditor();renderCues()};
+    r.querySelector('[data-a="now"]').onclick=()=>{c.t=+showClock().toFixed(2);show.dirty=true;renderEditor();renderCues()};
+    r.querySelector('[data-a="del"]').onclick=()=>{show.cues.splice(i,1);show.dirty=true;renderEditor();renderCues()};
+    box.appendChild(r);
+  });
+}
+function readEditorHeader(show){
+  show.title=$("eTitle").value.trim()||"Untitled show";show.artist=$("eArtist").value.trim();
+  show.bpm=+$("eBpm").value||0;show.tempo=$("eTempoMode").value;
+}
+function saveCurrent(){
+  let show=curShow();if(!show)return;readEditorHeader(show);
+  show.cues.sort((a,b)=>a.t-b.t);
+  if(show.origin!=="mine"){                         // built-in and Claude shows are kept; save a personal copy
+    const copy=JSON.parse(JSON.stringify(show));copy.id=show.id+"-mine";copy.origin="mine";
+    addShow(copy);
+    // restore the original from its source next time; keep the edited copy selected
+    st.showId=copy.id;show=copy;
+  }
+  show.dirty=false;saveMine();renderLib();renderCues();renderEditor();
+  $("saveNote").className="note ok";$("saveNote").textContent="Saved on this phone.";
+}
+function exportShow(show){
+  const o={format:"front-row-show/1",title:show.title,artist:show.artist,bpm:show.bpm||undefined,tempo:show.tempo,duration:show.duration||undefined,notes:show.notes||undefined,
+    cues:show.cues.map(c=>({t:+c.t.toFixed(2),section:c.section,fx:c.fx,colors:c.colors,bright:c.bright,...(c.spread!=null?{spread:c.spread}:{}),...(c.bpm?{bpm:c.bpm}:{})}))};
+  return JSON.stringify(o,null,1);
+}
+const CLAUDE_PROMPT=`Make a light-stick show for The Front Row Experience app.
+
+Song: [ARTIST – SONG TITLE]
+
+Reply with only JSON in this format:
+{"format":"front-row-show/1","title":"…","artist":"…","bpm":<song tempo>,"tempo":"show","duration":<seconds>,"draft":true,
+ "notes":"one line on the concept",
+ "cues":[{"t":<start time in seconds>,"section":"Intro|Verse 1|Pre-chorus|Chorus|Post-chorus|Hook|Rap|Dance break|Bridge|Final chorus|Outro","fx":"Solid|Pulse|Strobe|Rainbow|Wave|Chase|Sparkle|Off","colors":["#RRGGBB", …up to 3],"bright":0.25–1,"spread":0–1 (optional),"bpm":<only if the tempo changes here>}]}
+
+Guidelines: one cue per song section in order; match colors to the group's fandom color and the song's mood and concept; save Strobe and Sparkle for the biggest moments; use Off or low brightness for quiet breaks; include any tempo changes. Put "draft": true because the timing will be fine-tuned in the app.`;
+
+// ================= stick list UI =================
 function render(){
   const stage=$("stage");stage.innerHTML="";
   st.devices.forEach(d=>{
@@ -277,7 +671,7 @@ function render(){
   st.devices.forEach((d,i)=>{
     const r=document.createElement("div");r.className="dev";
     const chip=d.kind==="ble"?'<span class="chip ble">Bluetooth</span>':d.kind==="lost"?'<span class="chip">Disconnected</span>':'<span class="chip">Virtual</span>';
-    r.innerHTML=`<span class="label">${String(i+1).padStart(2,"0")}</span><div class="meta"><b>${esc(d.name)}</b><span>${d.kind==="ble"?"sending live colors":"on-screen preview"}</span></div>${chip}<div class="ctl"><button data-a="up" aria-label="Move ${esc(d.name)} left" ${i===0?"disabled":""}>↑ Up</button><button data-a="down" aria-label="Move ${esc(d.name)} right" ${i===st.devices.length-1?"disabled":""}>↓ Down</button><button data-a="id">Identify</button><button data-a="rm" class="ghost" aria-label="Remove ${esc(d.name)}">Remove</button></div>`;
+    r.innerHTML=`<span class="label">${String(i+1).padStart(2,"0")}</span><div class="meta"><b>${esc(d.name)}</b><span>${d.kind==="ble"?"sending live colors":"on-screen preview"}</span></div>${chip}<div class="ctl"><button class="small" data-a="up" aria-label="Move ${esc(d.name)} left" ${i===0?"disabled":""}>↑ Up</button><button class="small" data-a="down" aria-label="Move ${esc(d.name)} right" ${i===st.devices.length-1?"disabled":""}>↓ Down</button><button class="small" data-a="id">Identify</button><button class="small ghost" data-a="rm" aria-label="Remove ${esc(d.name)}">Remove</button></div>`;
     r.querySelector('[data-a="up"]').onclick=()=>moveDevice(d,-1);
     r.querySelector('[data-a="down"]').onclick=()=>moveDevice(d,1);
     r.querySelector('[data-a="id"]').onclick=()=>{d.identUntil=performance.now()+3000};
@@ -285,50 +679,76 @@ function render(){
     list.appendChild(r);
   });
 }
-function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+// ================= wiring =================
+["live","shows","sticks"].forEach(name=>{
+  $("tab-"+name).onclick=()=>{["live","shows","sticks"].forEach(n=>{$("tab-"+n).setAttribute("aria-selected",n===name);$("pane-"+n).hidden=n!==name});
+    try{localStorage.setItem("fre.tab",name)}catch(e){}};
+});
 
 const sw=$("swatches");
 COLORS.forEach(c=>{const b=document.createElement("button");b.className="sw";b.style.background=c;b.setAttribute("aria-label",c);b.setAttribute("aria-pressed",c===st.color);
   b.onclick=()=>{st.color=c;stopShow();$("hexOut").textContent=c;sw.querySelectorAll(".sw").forEach(x=>x.setAttribute("aria-pressed",x===b))};sw.appendChild(b)});
-
 const fxBox=$("effects");
 EFFECTS.forEach(f=>{const b=document.createElement("button");b.textContent=f;b.setAttribute("aria-pressed",f===st.fx);
   b.onclick=()=>{st.fx=f;stopShow();fxBox.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b))};fxBox.appendChild(b)});
-
 $("bright").oninput=e=>{st.bright=e.target.value/100;$("brightOut").textContent=e.target.value+"%"};
 $("spread").oninput=e=>{st.spread=e.target.value/100;$("spreadOut").textContent=e.target.value+"%"};
 
-const setBpm=v=>{st.bpm=Math.max(40,Math.min(220,Math.round(v)));$("bpmOut").textContent=st.bpm};
-$("bpmUp").onclick=()=>setBpm(st.bpm+2);$("bpmDown").onclick=()=>setBpm(st.bpm-2);
-let taps=[];$("tap").onclick=()=>{const n=performance.now();taps=taps.filter(x=>n-x<3000);taps.push(n);
-  if(taps.length>=3){const iv=(taps[taps.length-1]-taps[0])/(taps.length-1);setBpm(60000/iv)}};
+const manualBpm=v=>{if(listen.on)stopListening();setBpm(v,"manual")};
+$("bpmUp").onclick=()=>manualBpm(Math.round(st.bpm)+1);$("bpmDown").onclick=()=>manualBpm(Math.round(st.bpm)-1);
+$("halfBpm").onclick=()=>{setBpm(st.bpm/2);if(listen.on)listen.hist=listen.hist.map(x=>x/2)};
+$("dblBpm").onclick=()=>{setBpm(st.bpm*2);if(listen.on)listen.hist=listen.hist.map(x=>x*2)};
+let taps=[];$("tap").onclick=()=>{if(listen.on)stopListening();const n=nowS();taps=taps.filter(x=>n-x<3);taps.push(n);
+  if(taps.length>=3){const iv=(taps[taps.length-1]-taps[0])/(taps.length-1);setBeatAt(60/iv,n);st.tempoSrc="tap"}else{st.anchor=n}};
+$("listen").onclick=startListening;
 
-const cueBox=$("cues");
-CUES.forEach((c,i)=>{const r=document.createElement("div");r.className="cue";
-  const sw=c.colors.length?c.colors.map(x=>`<i style="background:${x}"></i>`).join(""):'<i style="background:linear-gradient(90deg,#f33,#fd0,#3f7,#0ef,#36f,#a4f)"></i>';
-  r.innerHTML=`<span class="n">${i+1}</span><span>${c.label}</span><span class="bar">${sw}</span>`;cueBox.appendChild(r)});
-let lastCue=-2;function markCue(i){if(i===lastCue)return;lastCue=i;[...cueBox.children].forEach((r,j)=>r.classList.toggle("on",j===i))}
-function stopShow(){st.showOn=false;$("playShow").textContent="Play show"}
-$("playShow").onclick=()=>{if(st.showOn)return stopShow();st.showOn=true;st.showStart=performance.now()/1000;$("playShow").textContent="Stop show"};
-
-$("addVirtual").onclick=()=>addVirtual();
-$("addBle").onclick=addBle;
+$("songFile").onchange=e=>{const f=e.target.files[0];if(f)loadSongFile(f)};
+$("showStart").onclick=startShow;$("showStop").onclick=()=>stopShow();
+$("nudgeBack").onclick=()=>{st.play.nudge-=.1};$("nudgeFwd").onclick=()=>{st.play.nudge+=.1};
+$("markBtn").onclick=markNext;
+$("addCue").onclick=()=>{const show=curShow();if(!show)return;const last=show.cues[show.cues.length-1];
+  show.cues.push({t:last?last.t+16:0,section:"New section",fx:last?last.fx:"Solid",colors:last?last.colors.slice():[st.color],bright:last?last.bright:1});show.dirty=true;renderEditor();renderCues()};
+$("saveShow").onclick=saveCurrent;
+$("dupShow").onclick=()=>{const show=curShow();if(!show)return;readEditorHeader(show);const c=JSON.parse(JSON.stringify(show));c.id="show-"+Math.random().toString(36).slice(2,8);c.title=show.title+" (copy)";c.origin="mine";addShow(c);saveMine();selectShow(c.id)};
+$("delShow").onclick=()=>{const show=curShow();const nt=$("saveNote");
+  if(!show||show.origin!=="mine"){nt.className="note";nt.textContent="Built-in and Claude shows can't be deleted. Edit and save to make your own copy.";return}
+  if($("delShow").dataset.confirm!=="1"){$("delShow").dataset.confirm="1";$("delShow").textContent="Tap again to delete";setTimeout(()=>{$("delShow").dataset.confirm="";$("delShow").textContent="Delete"},3000);return}
+  delete st.shows[show.id];saveMine();$("delShow").dataset.confirm="";$("delShow").textContent="Delete";selectShow(Object.keys(st.shows)[0])};
+$("copyPrompt").onclick=async()=>{const nt=$("importNote");try{await navigator.clipboard.writeText(CLAUDE_PROMPT);nt.className="note ok";nt.textContent="Prompt copied. Paste it into Claude and fill in the song."}catch(e){$("importBox").value=CLAUDE_PROMPT;$("importBox").select();nt.className="note";nt.textContent="Copy the prompt from the box above."}};
+$("importBtn").onclick=()=>{const nt=$("importNote");
+  try{let txt=$("importBox").value.trim();const m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error("Paste the show code, starting with {");
+    const s=normalizeShow(JSON.parse(m[0]),"mine");s.id="show-"+Math.random().toString(36).slice(2,8);addShow(s);saveMine();selectShow(s.id);
+    nt.className="note ok";nt.textContent=`Added "${s.title}" with ${s.cues.length} cues.`;$("importBox").value="";}
+  catch(e){nt.className="note warn";nt.textContent=e instanceof SyntaxError?"That isn't valid show code. Copy Claude's whole reply, including the curly braces.":e.message}};
+$("exportBtn").onclick=async()=>{const show=curShow();if(!show)return;readEditorHeader(show);const txt=exportShow(show);$("importBox").value=txt;const nt=$("importNote");
+  try{await navigator.clipboard.writeText(txt);nt.className="note ok";nt.textContent="Show code copied. Send it to Claude to refine it, or keep it as a backup."}catch(e){nt.className="note";nt.textContent="Show code is in the box above."}};
 
 // profile editor
 const pSel=$("pName");
 function fillProfiles(){pSel.innerHTML="";Object.keys(st.profiles).forEach(k=>{const o=document.createElement("option");o.textContent=k;o.selected=k===st.profile;pSel.appendChild(o)});loadProfile()}
 function loadProfile(){const p=st.profiles[st.profile];$("pNamePrefix").value=p.prefix;$("pSvc").value=p.svc;$("pChr").value=p.chr;$("pTpl").value=p.tpl;$("pKey").value=p.key||"";$("pResp").value=p.resp?"1":"0"}
 pSel.onchange=()=>{st.profile=pSel.value;loadProfile()};
+$("addVirtual").onclick=()=>addVirtual();
+$("addBle").onclick=addBle;
 $("saveProfile").onclick=()=>{
   const p={prefix:$("pNamePrefix").value.trim(),svc:$("pSvc").value.trim().toLowerCase(),chr:$("pChr").value.trim().toLowerCase(),tpl:$("pTpl").value.trim()||"{r} {g} {b}",key:$("pKey").value.replace(/\s/g,""),resp:$("pResp").value==="1",gap:st.profiles[st.profile].gap||(($("pResp").value==="1")?70:45)};
-  try{parseTpl(p.tpl,[0,0,0])}catch(e){}
   const name=st.profile==="Generic (fill in)"?(p.prefix||"My stick")+" profile":st.profile;
   st.profiles[name]=p;st.profile=name;
   try{const custom={};Object.keys(st.profiles).forEach(k=>{if(!BUILTIN_PROFILES[k])custom[k]=st.profiles[k]});localStorage.setItem("lsu.profiles",JSON.stringify(custom))}catch(e){}
   fillProfiles();$("profileMsg").textContent="Saved";setTimeout(()=>$("profileMsg").textContent="",1500);
 };
+
+// ================= start =================
 fillProfiles();
+addShow(normalizeShow(DEMO_SHOW,"builtin"));
+Object.values(loadMine()).forEach(o=>{try{const s=normalizeShow(o,"mine");s.id=o.id;addShow(s)}catch(e){}});
+let last=null;try{last=localStorage.getItem("fre.lastShow")}catch(e){}
+st.showId=last&&st.shows[last]?last:DEMO_SHOW.id;
+renderLib();renderCues();renderEditor();
+loadRepoShows();
 ["Stick 1","Stick 2","Stick 3","Stick 4"].forEach(n=>addVirtual(n));
+try{const t=localStorage.getItem("fre.tab");if(t&&$("tab-"+t))$("tab-"+t).click()}catch(e){}
 requestAnimationFrame(tick);
 })();
 </script>
