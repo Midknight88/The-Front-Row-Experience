@@ -984,7 +984,7 @@ $("listen").onclick=startListening;
 document.querySelectorAll("#srcSeg button").forEach(b=>b.onclick=()=>setSource(b.dataset.src));
 $("ytLoad").onclick=()=>{const id=ytId($("ytLink").value);if(!id){$("ytNote").className="note warn";$("ytNote").textContent="That doesn't look like a YouTube link.";return}ytLoad(id,false)};
 $("ytAskClaude").onclick=async()=>{const i=ytInfo(),nt=$("ytAskNote");
-  const msg=`Make a Front Row show for this YouTube video and add it to my repo:\nhttps://www.youtube.com/watch?v=${i.id}\n(${i.title}${i.channel?" — "+i.channel:""}${i.duration?", "+fmtT(i.duration).replace(/\.\d$/,""):""})`;
+  const msg=`NewShow: https://www.youtube.com/watch?v=${i.id}\n(${i.title}${i.channel?" — "+i.channel:""}${i.duration?", "+fmtT(i.duration).replace(/\.\d$/,""):""})`;
   try{await navigator.clipboard.writeText(msg);nt.className="note ok";nt.textContent="Copied. Paste it into your chat with Claude. When the show is ready, reload this page and load the video again."}
   catch(e){nt.className="note";nt.textContent=msg}};
 $("ytUseDemo").onclick=()=>{const d=Object.values(st.shows).find(s=>s.origin==="builtin");if(d){selectShow(d.id,true);$("ytNoShow").hidden=true;$("ytNote").className="note";$("ytNote").textContent="Using the all-purpose show. Turn on Listen to the music on the Live tab so it follows this song's tempo."}};

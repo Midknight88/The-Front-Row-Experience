@@ -38,7 +38,7 @@ A show is JSON:
 
 ### Making a show from a YouTube link
 
-Send Claude a YouTube link (the app's **Copy request for Claude** button builds the message). Claude identifies the song from the video, plans the show around the song's sections and concept, saves it as `shows/<artist>-<song>.json` with that video's `youtube.id`, lists it in `shows/index.json` and pushes. When that video is loaded in the app, its show is picked automatically.
+Send Claude `NewShow: <YouTube link>`, plus any notes such as keeping a storyline intro dark (the app's **Copy request for Claude** button builds the message). Claude identifies the song from the video, plans the show around the song's sections and concept, saves it as `shows/<artist>-<song>.json` with that video's `youtube.id`, lists it in `shows/index.json` and pushes. When that video is loaded in the app, its show is picked automatically.
 
 ### Making your edits the Claude version
 
