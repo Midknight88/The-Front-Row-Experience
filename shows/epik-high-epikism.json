@@ -1,0 +1,23 @@
+{
+ "format": "front-row-show/1",
+ "id": "epikhigh-epikism",
+ "title": "EPIKISM",
+ "artist": "EPIK HIGH",
+ "tempo": "listen",
+ "duration": 162,
+ "youtube": {"id": "iAvA6-nrOrI", "offset": 0},
+ "draft": true,
+ "notes": "Concept: first-birthday party (the single art is Mithra's first-birthday photo). Balloon brights and confetti Sparkle; each rapper gets his own color (Tukutz orange, Tablo blue, Mithra green) and Crush's hook is warm pink and gold. Video is a fan lyric upload (Kaesuri).",
+ "cues": [
+  {"t": 0,   "section": "Intro",                 "fx": "Pulse",   "colors": ["#FFD400"], "bright": 0.6},
+  {"t": 6,   "section": "Verse 1 (Tukutz)",      "fx": "Wave",    "colors": ["#FF8A00", "#FFD400"], "bright": 0.85, "spread": 0.6},
+  {"t": 30,  "section": "Hook (Crush)",          "fx": "Wave",    "colors": ["#FF5FA2", "#FFC46B"], "bright": 0.9, "spread": 0.8},
+  {"t": 48,  "section": "Verse 2 (Tablo)",       "fx": "Pulse",   "colors": ["#3D6BFF"], "bright": 0.9},
+  {"t": 72,  "section": "Hook (Crush)",          "fx": "Wave",    "colors": ["#FF5FA2", "#FFC46B"], "bright": 0.9, "spread": 0.8},
+  {"t": 90,  "section": "Verse 3 (Mithra)",      "fx": "Pulse",   "colors": ["#3DFF7A"], "bright": 0.9},
+  {"t": 114, "section": "All three",             "fx": "Chase",   "colors": ["#FF8A00", "#3D6BFF", "#3DFF7A"], "bright": 1},
+  {"t": 128, "section": "Final hook",            "fx": "Sparkle", "colors": ["#FF5FA2", "#FFD400", "#00E5FF"], "bright": 1},
+  {"t": 150, "section": "Outro",                 "fx": "Rainbow", "colors": [], "bright": 0.6, "spread": 0.8},
+  {"t": 158, "section": "Blackout",              "fx": "Off",     "colors": [], "bright": 0}
+ ]
+}
