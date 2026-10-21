@@ -301,6 +301,7 @@ const BUILTIN_PROFILES={
   "MONSTA X Light Stick V3":{prefix:"MONSTA",alsoService:true,svc:"00000000-0000-1000-8000-00805f9b34fb",chr:"00000000-0000-1000-8000-00805f9b34fb",tpl:"82 01 {r} {g} {b} 00 00 00 00 00 FD 47 52 41 56 45",key:"2174516473A1F5351004A13E6B716AB9",resp:true,gap:70},
   "P1Harmony Light Stick Ver.2":{prefix:"P1H",svc:"00010203-0405-0607-0809-0a0b0c0d1911",chr:"00010203-0405-0607-0809-0a0b0c0d2b19",tpl:"01 FF 00 {r} {g} {b} 00 00 {sum2}",resp:true,gap:50},
   "P1Harmony Light Stick Ver.1":{prefix:"P1H",svc:"00010203-0405-0607-0809-0a0b0c0d1911",chr:"00010203-0405-0607-0809-0a0b0c0d2b19",tpl:"01 01 0B 00 00 {r} {g} {b} 00 00 {sum2}",resp:true,gap:50},
+  "ATEEZ Light Stick (LIGHTINY)":{prefix:"",alsoService:true,svc:"8ec91001-f315-4f60-9fb8-838830daea50",chr:"8ec91002-f315-4f60-9fb8-838830daea50",tpl:"01 00 00 {r} {g} {b} 00 00",resp:false,gap:40},
   "ELK-BLEDOM LED strip (test rig)":{prefix:"ELK-BLEDOM",svc:"0000fff0-0000-1000-8000-00805f9b34fb",chr:"0000fff3-0000-1000-8000-00805f9b34fb",tpl:"7E 07 05 03 {r} {g} {b} 10 EF"}
 };
 // A built-in demo so the Shows tab is never empty. More shows load from shows/index.json in the GitHub repo.
@@ -466,7 +467,7 @@ async function sendBle(d,rgb){
     if(d.key&&data.length===16)data=await aesBlock(d.key,data);
     if(d.resp)await (d.chr.writeValueWithResponse?d.chr.writeValueWithResponse(data):d.chr.writeValue(data));
     else if(d.chr.writeValueWithoutResponse)await d.chr.writeValueWithoutResponse(data);else await d.chr.writeValue(data);
-  }catch(e){}finally{d.busy=false}
+  }catch(e){if(!d.resp&&d.chr.properties&&!d.chr.properties.writeWithoutResponse){d.resp=true;d.last=""}}finally{d.busy=false}
 }
 // Remember the shelf order of Bluetooth sticks (Chrome keeps device ids stable per site)
 function loadOrder(){try{return JSON.parse(localStorage.getItem("fre.order")||"[]")}catch(e){return[]}}
