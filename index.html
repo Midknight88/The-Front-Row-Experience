@@ -706,9 +706,10 @@ function normalizeShow(o,origin){
 function addShow(s){st.shows[s.id]=s}
 async function loadRepoShows(){
   try{
-    const idx=await (await fetch("shows/index.json",{cache:"no-cache"})).json();
+    const bust="?v="+Date.now();      // GitHub Pages caches files for up to 10 minutes; a unique address always gets the latest
+    const idx=await (await fetch("shows/index.json"+bust,{cache:"no-store"})).json();
     for(const f of (idx.shows||[])){
-      try{const o=await (await fetch("shows/"+f,{cache:"no-cache"})).json();const s=normalizeShow(o,"repo");if(!st.shows[s.id]||st.shows[s.id].origin==="repo")addShow(s)}catch(e){}
+      try{const o=await (await fetch("shows/"+f+bust,{cache:"no-store"})).json();const s=normalizeShow(o,"repo");if(!st.shows[s.id]||st.shows[s.id].origin==="repo")addShow(s)}catch(e){}
     }
     let folded=[];
     Object.values(st.shows).filter(m=>m.origin==="mine").forEach(m=>{
