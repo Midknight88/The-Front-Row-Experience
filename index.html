@@ -1,0 +1,312 @@
+<title>Lightstick Unison</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=Figtree:wght@400;600&display=swap">
+<style>
+/* Layout: one-column phone console — stage of glowing sticks on top, mixer-style controls below */
+:root{
+  --bg:#0c0b14; --panel:#16141f; --line:#2a2638; --fg:#ece9f5; --muted:#8f89a6; --accent:#ff5fa2; --ok:#4fd1a5; --warn:#ffb547;
+  --display:"Bricolage Grotesque",system-ui,sans-serif; --body:"Figtree",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:15px;line-height:1.45;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{font-family:var(--display);font-weight:800;font-size:1.9rem;letter-spacing:-.02em;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:500;font-size:1.05rem;margin:0}
+.sub{color:var(--muted);margin:4px 0 0;font-size:.9rem}
+.label{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+section{display:flex;flex-direction:column;gap:10px}
+.stage{position:relative;border-radius:18px;background:radial-gradient(120% 90% at 50% 110%,#1d1930 0%,var(--bg) 70%);border:1px solid var(--line);padding:22px 12px 14px;display:flex;justify-content:center;gap:clamp(8px,4vw,26px);flex-wrap:wrap;min-height:220px;align-items:flex-end}
+.stick{display:flex;flex-direction:column;align-items:center;gap:6px;width:56px}
+.bulb{width:46px;height:46px;border-radius:50%;background:var(--c,#333);box-shadow:0 0 calc(var(--b,1)*28px) calc(var(--b,1)*8px) var(--c,#000);opacity:calc(.25 + var(--b,1)*.75);transition:background .05s}
+.shape-heart .bulb{border-radius:50% 50% 12px 50%;transform:rotate(45deg)}
+.shape-star .bulb{clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);box-shadow:none;filter:drop-shadow(0 0 calc(var(--b,1)*14px) var(--c))}
+.shape-cube .bulb{border-radius:10px}
+.handle{width:12px;height:70px;border-radius:6px;background:linear-gradient(#3a3550,#221f30)}
+.sname{font-family:var(--mono);font-size:.65rem;color:var(--muted);text-align:center;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin-right:4px}
+.dot.live{background:var(--ok)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.swatches{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+.sw{aspect-ratio:1;border-radius:50%;border:2px solid transparent;cursor:pointer;max-width:100%}
+.sw[aria-pressed="true"]{border-color:var(--fg);box-shadow:0 0 0 2px var(--bg) inset}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+button{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#1a0010;font-weight:600}
+button.ghost{background:transparent}
+.slider{display:grid;grid-template-columns:90px 1fr 48px;gap:10px;align-items:center}
+.slider output{font-family:var(--mono);font-size:.8rem;text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.dev{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.dev:first-child{border-top:0}
+.dev .meta{min-width:0}
+.dev .meta b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dev .meta span{font-family:var(--mono);font-size:.7rem;color:var(--muted)}
+.chip{font-family:var(--mono);font-size:.65rem;padding:3px 7px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.chip.ble{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 50%,transparent)}
+.cue{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;font-size:.9rem;padding:6px 8px;border-radius:8px}
+.cue.on{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+.cue .n{font-family:var(--mono);color:var(--muted);font-size:.75rem}
+.cue .bar{display:flex;gap:3px}
+.cue .bar i{width:14px;height:14px;border-radius:4px}
+details{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--panel)}
+summary{cursor:pointer;font-weight:600}
+.field{display:flex;flex-direction:column;gap:4px}
+.field input,.field select{font-family:var(--mono);font-size:.8rem;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px}
+.note{font-size:.82rem;color:var(--muted);margin:0}
+.note.warn{color:var(--warn)}
+code{font-family:var(--mono);font-size:.78rem}
+.bpm{font-family:var(--display);font-weight:800;font-size:2rem;font-variant-numeric:tabular-nums;line-height:1}
+@media (prefers-reduced-motion:reduce){.bulb{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="label">Home light show · proof of concept</div>
+    <h1>Lightstick Unison</h1>
+    <p class="sub">Drive every stick in the room from one phone, the way a venue's control booth does.</p>
+  </header>
+
+  <div class="stage" id="stage" aria-label="Connected light sticks"></div>
+
+  <section>
+    <div class="row" style="justify-content:space-between">
+      <h2>Color</h2><span class="label" id="hexOut">#FF5FA2</span>
+    </div>
+    <div class="swatches" id="swatches"></div>
+  </section>
+
+  <section>
+    <h2>Effect</h2>
+    <div class="seg" id="effects"></div>
+    <div class="slider"><label for="bright">Brightness</label><input id="bright" type="range" min="5" max="100" value="90"><output id="brightOut">90%</output></div>
+    <div class="slider"><label for="spread">Spread</label><input id="spread" type="range" min="0" max="100" value="35"><output id="spreadOut">35%</output></div>
+  </section>
+
+  <section class="panel">
+    <div class="row" style="justify-content:space-between">
+      <div><div class="label">Tempo</div><div class="bpm" id="bpmOut">120</div></div>
+      <div class="row">
+        <button id="bpmDown" aria-label="Slower">−</button>
+        <button id="tap" class="primary">Tap beat</button>
+        <button id="bpmUp" aria-label="Faster">+</button>
+      </div>
+    </div>
+    <p class="note">Tap along to the song four or more times. Pulse, strobe, chase and wave lock to this tempo.</p>
+  </section>
+
+  <section class="panel">
+    <div class="row" style="justify-content:space-between">
+      <h2>Show sequence</h2>
+      <button id="playShow" class="primary">Play show</button>
+    </div>
+    <div id="cues"></div>
+    <p class="note">Each cue lasts 8 beats. This is how venue shows work: a pre-planned cue list fired in time with the music.</p>
+  </section>
+
+  <section class="panel">
+    <div class="row" style="justify-content:space-between">
+      <h2>Sticks</h2>
+      <div class="row"><button id="addVirtual" class="ghost">+ Virtual</button><button id="addBle" class="primary">+ Bluetooth</button></div>
+    </div>
+    <div id="devices"></div>
+    <p class="note warn" id="bleNote" hidden></p>
+  </section>
+
+  <details>
+    <summary>Bluetooth protocol profile</summary>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+      <p class="note">Each brand of stick listens for color commands on its own Bluetooth characteristic. The Stray Kids V2 profile is built in, decoded from the official app. Add others the same way. Bytes are hex; <code>{r} {g} {b} {w}</code> are filled in live.</p>
+      <div class="field"><label class="label" for="pName">Profile</label>
+        <select id="pName"></select></div>
+      <div class="field"><label class="label" for="pNamePrefix">Device name starts with</label><input id="pNamePrefix" placeholder="e.g. FANLIGHT"></div>
+      <div class="field"><label class="label" for="pSvc">Service UUID</label><input id="pSvc" placeholder="0000xxxx-0000-1000-8000-00805f9b34fb"></div>
+      <div class="field"><label class="label" for="pChr">Write characteristic UUID</label><input id="pChr" placeholder="0000xxxx-0000-1000-8000-00805f9b34fb"></div>
+      <div class="field"><label class="label" for="pTpl">Color command template</label><input id="pTpl" placeholder="7E 07 05 03 {r} {g} {b} 10 EF"></div>
+      <div class="field"><label class="label" for="pKey">AES-128 key (hex, optional)</label><input id="pKey" placeholder="leave blank if commands aren't encrypted"></div>
+      <div class="field"><label class="label" for="pResp">Write type</label><select id="pResp"><option value="0">Without response (faster)</option><option value="1">With response</option></select></div>
+      <div class="row"><button id="saveProfile">Save profile</button><span class="note" id="profileMsg"></span></div>
+    </div>
+  </details>
+</div>
+
+<script>
+(() => {
+const COLORS=["#FF5FA2","#FF2D2D","#FF8A00","#FFD400","#3DFF7A","#00E5FF","#3D6BFF","#A24BFF","#FFFFFF","#FF4FD8","#9B111E","#6CF0C2","#C7A6FF","#FFB0C8","#00A86B","#B8860B"];
+const EFFECTS=["Solid","Pulse","Strobe","Rainbow","Wave","Chase"];
+const CUES=[
+  {fx:"Solid",colors:["#3D6BFF"],label:"Intro · calm blue"},
+  {fx:"Pulse",colors:["#A24BFF"],label:"Verse · slow breath"},
+  {fx:"Wave",colors:["#FF5FA2","#3D6BFF"],label:"Pre-chorus · wave"},
+  {fx:"Strobe",colors:["#FFFFFF"],label:"Drop · white strobe"},
+  {fx:"Chase",colors:["#FF2D2D","#FFD400","#3DFF7A"],label:"Chorus · color chase"},
+  {fx:"Rainbow",colors:[],label:"Bridge · rainbow"},
+  {fx:"Solid",colors:["#FF5FA2"],label:"Outro · fandom pink"}
+];
+const BUILTIN_PROFILES={
+  "Generic (fill in)":{prefix:"",svc:"",chr:"",tpl:"{r} {g} {b}"},
+  "Stray Kids Light Stick V2":{prefix:"STRAY KIDS",svc:"00000000-0000-1000-8000-00805f9b34fb",chr:"00000000-0000-1000-8000-00805f9b34fb",tpl:"82 01 {r} {g} {b} 00 00 00 00 00 FD 47 52 41 56 45",key:"2174516473A1F5351004A13E6B716AB9",resp:true,gap:70},
+  "ELK-BLEDOM LED strip (test rig)":{prefix:"ELK-BLEDOM",svc:"0000fff0-0000-1000-8000-00805f9b34fb",chr:"0000fff3-0000-1000-8000-00805f9b34fb",tpl:"7E 07 05 03 {r} {g} {b} 10 EF"}
+};
+
+const st={color:"#FF5FA2",fx:"Solid",bright:.9,spread:.35,bpm:120,showOn:false,showStart:0,devices:[],profiles:{...BUILTIN_PROFILES},profile:"Stray Kids Light Stick V2"};
+try{const p=JSON.parse(localStorage.getItem("lsu.profiles")||"null");if(p)Object.assign(st.profiles,p)}catch(e){}
+
+const $=id=>document.getElementById(id);
+const hex2rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const rgb2hex=c=>"#"+c.map(v=>Math.round(v).toString(16).padStart(2,"0")).join("").toUpperCase();
+const hsv=(h,s=1,v=1)=>{const f=n=>{const k=(n+h*6)%6;return v-v*s*Math.max(0,Math.min(k,4-k,1))};return[f(5)*255,f(3)*255,f(1)*255]};
+const mix=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+
+// ---------- devices ----------
+const SHAPES=["","shape-heart","shape-star","shape-cube"];
+function addVirtual(name){
+  const n=st.devices.length;
+  st.devices.push({id:crypto.randomUUID?crypto.randomUUID():String(Math.random()),name:name||`Stick ${n+1}`,kind:"virtual",shape:SHAPES[n%SHAPES.length],last:""});
+  render();
+}
+
+function parseTpl(tpl,rgb){
+  const [r,g,b]=rgb.map(v=>Math.round(v));const w=Math.min(r,g,b);
+  const map={r,g,b,w};
+  return new Uint8Array(tpl.trim().split(/\s+/).map(t=>{const m=t.match(/^\{([rgbw])\}$/);return m?map[m[1]]:parseInt(t,16)&255}));
+}
+
+// AES-128-ECB of one 16-byte block = first block of AES-CBC with a zero IV
+const keyCache={};
+async function aesBlock(keyHex,data){
+  if(!keyCache[keyHex])keyCache[keyHex]=await crypto.subtle.importKey("raw",new Uint8Array(keyHex.match(/../g).map(h=>parseInt(h,16))),{name:"AES-CBC"},false,["encrypt"]);
+  const out=new Uint8Array(await crypto.subtle.encrypt({name:"AES-CBC",iv:new Uint8Array(16)},keyCache[keyHex],data));
+  return out.slice(0,16);
+}
+async function addBle(){
+  const note=$("bleNote");note.hidden=true;
+  const prof=st.profiles[st.profile];
+  if(!navigator.bluetooth){note.textContent="This browser can't reach Bluetooth. Open this page in Chrome on Android (or the Bluefy browser on iPhone), served over https. Virtual sticks still work here.";note.hidden=false;return}
+  if(!prof.svc||!prof.chr){note.textContent="Fill in the Bluetooth protocol profile below first, so the app knows where to send colors.";note.hidden=false;return}
+  try{
+    const opts=prof.prefix?{filters:[{namePrefix:prof.prefix}],optionalServices:[prof.svc]}:{acceptAllDevices:true,optionalServices:[prof.svc]};
+    const dev=await navigator.bluetooth.requestDevice(opts);
+    const server=await dev.gatt.connect();
+    const chr=await (await server.getPrimaryService(prof.svc)).getCharacteristic(prof.chr);
+    const d={id:dev.id,name:dev.name||"Bluetooth stick",kind:"ble",shape:"",chr,tpl:prof.tpl,key:prof.key||"",resp:!!prof.resp,gap:prof.gap||45,last:"",busy:false,lastSend:0};
+    dev.addEventListener("gattserverdisconnected",()=>{d.kind="lost";render()});
+    st.devices.push(d);render();
+  }catch(e){
+    note.textContent=e.name==="NotFoundError"?"No stick was chosen. Put the stick in Bluetooth mode (usually a 3-second button hold) and try again.":
+      e.name==="SecurityError"?"Bluetooth is blocked inside this preview. Open the page in its own browser tab to pair real sticks.":
+      `Couldn't connect: ${e.message}`;
+    note.hidden=false;
+  }
+}
+async function sendBle(d,rgb){
+  const key=rgb.map(v=>Math.round(v/4)).join(",");          // skip near-identical frames
+  const now=performance.now();
+  if(d.busy||key===d.last||now-d.lastSend<d.gap)return;     // pace writes per stick (official SKZ app: 70 ms)
+  d.busy=true;d.last=key;d.lastSend=now;
+  try{let data=parseTpl(d.tpl,rgb);
+    if(d.key&&data.length===16)data=await aesBlock(d.key,data);
+    if(d.resp)await (d.chr.writeValueWithResponse?d.chr.writeValueWithResponse(data):d.chr.writeValue(data));
+    else if(d.chr.writeValueWithoutResponse)await d.chr.writeValueWithoutResponse(data);else await d.chr.writeValue(data);
+  }catch(e){}finally{d.busy=false}
+}
+
+// ---------- effect engine ----------
+function frameColor(fx,colors,i,n,t){
+  const beat=t*st.bpm/60, ph=beat%1, off=n>1?i/(n-1)*st.spread:0;
+  const base=hex2rgb(colors[0]||st.color);
+  switch(fx){
+    case"Solid":return[base,1];
+    case"Pulse":return[base,.15+.85*Math.pow(1-((beat-off)%1+1)%1,2)];
+    case"Strobe":return[base,ph<.12?1:0];
+    case"Rainbow":return[hsv(((beat/8)+off)%1),1];
+    case"Wave":{const k=.5+.5*Math.sin((beat/2-off*2)*Math.PI*2);const c2=hex2rgb(colors[1]||"#000000");return[mix(base,c2,k),1]}
+    case"Chase":{const pal=(colors.length?colors:[st.color]).map(hex2rgb);const step=Math.floor(beat)+i;return[pal[step%pal.length],Math.floor(beat)%Math.max(n,1)===i?1:.35]}
+  }
+  return[base,1];
+}
+
+function tick(now){
+  const t=now/1000;let fx=st.fx,colors=[st.color],cueIdx=-1;
+  if(st.showOn){
+    const beats=(t-st.showStart)*st.bpm/60;cueIdx=Math.floor(beats/8);
+    if(cueIdx>=CUES.length){stopShow();cueIdx=-1}else{fx=CUES[cueIdx].fx;colors=CUES[cueIdx].colors}
+  }
+  markCue(cueIdx);
+  const active=st.devices.filter(d=>d.kind!=="lost"),n=active.length;
+  active.forEach((d,i)=>{
+    const [rgb,lvl]=frameColor(fx,colors,i,n,t);const b=lvl*st.bright;
+    if(d.el){d.el.style.setProperty("--c",rgb2hex(rgb));d.el.style.setProperty("--b",b.toFixed(3))}
+    if(d.kind==="ble")sendBle(d,rgb.map(v=>v*b));
+  });
+  requestAnimationFrame(tick);
+}
+
+// ---------- UI ----------
+function render(){
+  const stage=$("stage");stage.innerHTML="";
+  st.devices.forEach(d=>{
+    const s=document.createElement("div");s.className="stick "+d.shape;
+    s.innerHTML=`<div class="bulb"></div><div class="handle"></div><div class="sname"><span class="dot ${d.kind==="ble"?"live":""}"></span>${esc(d.name)}</div>`;
+    d.el=s.querySelector(".bulb");stage.appendChild(s);
+  });
+  const list=$("devices");list.innerHTML="";
+  st.devices.forEach((d,i)=>{
+    const r=document.createElement("div");r.className="dev";
+    const chip=d.kind==="ble"?'<span class="chip ble">Bluetooth</span>':d.kind==="lost"?'<span class="chip">Disconnected</span>':'<span class="chip">Virtual</span>';
+    r.innerHTML=`<span class="label">${String(i+1).padStart(2,"0")}</span><div class="meta"><b>${esc(d.name)}</b><span>${d.kind==="ble"?"sending live colors":"on-screen preview"}</span></div><div class="row">${chip}<button class="ghost" aria-label="Remove ${esc(d.name)}">✕</button></div>`;
+    r.querySelector("button").onclick=()=>{try{d.chr?.service?.device?.gatt?.disconnect()}catch(e){}st.devices.splice(st.devices.indexOf(d),1);render()};
+    list.appendChild(r);
+  });
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+const sw=$("swatches");
+COLORS.forEach(c=>{const b=document.createElement("button");b.className="sw";b.style.background=c;b.setAttribute("aria-label",c);b.setAttribute("aria-pressed",c===st.color);
+  b.onclick=()=>{st.color=c;stopShow();$("hexOut").textContent=c;sw.querySelectorAll(".sw").forEach(x=>x.setAttribute("aria-pressed",x===b))};sw.appendChild(b)});
+
+const fxBox=$("effects");
+EFFECTS.forEach(f=>{const b=document.createElement("button");b.textContent=f;b.setAttribute("aria-pressed",f===st.fx);
+  b.onclick=()=>{st.fx=f;stopShow();fxBox.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b))};fxBox.appendChild(b)});
+
+$("bright").oninput=e=>{st.bright=e.target.value/100;$("brightOut").textContent=e.target.value+"%"};
+$("spread").oninput=e=>{st.spread=e.target.value/100;$("spreadOut").textContent=e.target.value+"%"};
+
+const setBpm=v=>{st.bpm=Math.max(40,Math.min(220,Math.round(v)));$("bpmOut").textContent=st.bpm};
+$("bpmUp").onclick=()=>setBpm(st.bpm+2);$("bpmDown").onclick=()=>setBpm(st.bpm-2);
+let taps=[];$("tap").onclick=()=>{const n=performance.now();taps=taps.filter(x=>n-x<3000);taps.push(n);
+  if(taps.length>=3){const iv=(taps[taps.length-1]-taps[0])/(taps.length-1);setBpm(60000/iv)}};
+
+const cueBox=$("cues");
+CUES.forEach((c,i)=>{const r=document.createElement("div");r.className="cue";
+  const sw=c.colors.length?c.colors.map(x=>`<i style="background:${x}"></i>`).join(""):'<i style="background:linear-gradient(90deg,#f33,#fd0,#3f7,#0ef,#36f,#a4f)"></i>';
+  r.innerHTML=`<span class="n">${i+1}</span><span>${c.label}</span><span class="bar">${sw}</span>`;cueBox.appendChild(r)});
+let lastCue=-2;function markCue(i){if(i===lastCue)return;lastCue=i;[...cueBox.children].forEach((r,j)=>r.classList.toggle("on",j===i))}
+function stopShow(){st.showOn=false;$("playShow").textContent="Play show"}
+$("playShow").onclick=()=>{if(st.showOn)return stopShow();st.showOn=true;st.showStart=performance.now()/1000;$("playShow").textContent="Stop show"};
+
+$("addVirtual").onclick=()=>addVirtual();
+$("addBle").onclick=addBle;
+
+// profile editor
+const pSel=$("pName");
+function fillProfiles(){pSel.innerHTML="";Object.keys(st.profiles).forEach(k=>{const o=document.createElement("option");o.textContent=k;o.selected=k===st.profile;pSel.appendChild(o)});loadProfile()}
+function loadProfile(){const p=st.profiles[st.profile];$("pNamePrefix").value=p.prefix;$("pSvc").value=p.svc;$("pChr").value=p.chr;$("pTpl").value=p.tpl;$("pKey").value=p.key||"";$("pResp").value=p.resp?"1":"0"}
+pSel.onchange=()=>{st.profile=pSel.value;loadProfile()};
+$("saveProfile").onclick=()=>{
+  const p={prefix:$("pNamePrefix").value.trim(),svc:$("pSvc").value.trim().toLowerCase(),chr:$("pChr").value.trim().toLowerCase(),tpl:$("pTpl").value.trim()||"{r} {g} {b}",key:$("pKey").value.replace(/\s/g,""),resp:$("pResp").value==="1",gap:st.profiles[st.profile].gap||(($("pResp").value==="1")?70:45)};
+  try{parseTpl(p.tpl,[0,0,0])}catch(e){}
+  const name=st.profile==="Generic (fill in)"?(p.prefix||"My stick")+" profile":st.profile;
+  st.profiles[name]=p;st.profile=name;
+  try{const custom={};Object.keys(st.profiles).forEach(k=>{if(!BUILTIN_PROFILES[k])custom[k]=st.profiles[k]});localStorage.setItem("lsu.profiles",JSON.stringify(custom))}catch(e){}
+  fillProfiles();$("profileMsg").textContent="Saved";setTimeout(()=>$("profileMsg").textContent="",1500);
+};
+fillProfiles();
+["Stick 1","Stick 2","Stick 3","Stick 4"].forEach(n=>addVirtual(n));
+requestAnimationFrame(tick);
+})();
+</script>
