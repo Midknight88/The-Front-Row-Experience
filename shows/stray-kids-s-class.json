@@ -5,19 +5,121 @@
  "artist": "Stray Kids",
  "tempo": "listen",
  "duration": 196,
+ "youtube": {
+  "id": "JsOOis4bBFg",
+  "offset": 0
+ },
  "draft": true,
- "notes": "Concept: luxury and swagger. Gold and red for the bragging sections, a cool blue drop for the old-school second verse where the beat changes, white strobes for the biggest chorus. Tempo follows the music, since the song switches beats mid-way.",
+ "notes": "Concept: luxury and swagger. Gold and red for the bragging sections, a cool blue drop for the old-school second verse where the beat changes, white strobes for the biggest chorus. Tempo follows the music, since the song switches beats mid-way. Video: the official M/V (3:31) runs about 15 s longer than the album track (3:16), so set where the song starts with Song starts here.",
  "cues": [
-  {"t": 0,   "section": "Intro",           "fx": "Pulse",   "colors": ["#B8860B"], "bright": 0.6},
-  {"t": 12,  "section": "Verse 1",         "fx": "Wave",    "colors": ["#FFD400", "#9B111E"], "bright": 0.8, "spread": 0.5},
-  {"t": 38,  "section": "Pre-chorus",      "fx": "Pulse",   "colors": ["#FF2D2D"], "bright": 0.9},
-  {"t": 50,  "section": "Chorus",          "fx": "Chase",   "colors": ["#FFD400", "#FF2D2D", "#FFFFFF"], "bright": 1},
-  {"t": 63,  "section": "Post-chorus",     "fx": "Strobe",  "colors": ["#FFD400"], "bright": 1},
-  {"t": 76,  "section": "Verse 2 (old-school switch)", "fx": "Wave", "colors": ["#3D6BFF", "#00E5FF"], "bright": 0.75, "spread": 0.6},
-  {"t": 101, "section": "Pre-chorus",      "fx": "Pulse",   "colors": ["#FF2D2D"], "bright": 0.9},
-  {"t": 113, "section": "Chorus",          "fx": "Chase",   "colors": ["#FFD400", "#FF2D2D", "#FFFFFF"], "bright": 1},
-  {"t": 139, "section": "Bridge",          "fx": "Solid",   "colors": ["#A24BFF"], "bright": 0.45},
-  {"t": 158, "section": "Final chorus",    "fx": "Sparkle", "colors": ["#FFD400", "#FFFFFF", "#FF2D2D"], "bright": 1},
-  {"t": 186, "section": "Outro",           "fx": "Pulse",   "colors": ["#B8860B"], "bright": 0.5}
+  {
+   "t": 0,
+   "section": "Intro",
+   "fx": "Pulse",
+   "colors": [
+    "#B8860B"
+   ],
+   "bright": 0.6
+  },
+  {
+   "t": 12,
+   "section": "Verse 1",
+   "fx": "Wave",
+   "colors": [
+    "#FFD400",
+    "#9B111E"
+   ],
+   "bright": 0.8,
+   "spread": 0.5
+  },
+  {
+   "t": 38,
+   "section": "Pre-chorus",
+   "fx": "Pulse",
+   "colors": [
+    "#FF2D2D"
+   ],
+   "bright": 0.9
+  },
+  {
+   "t": 50,
+   "section": "Chorus",
+   "fx": "Chase",
+   "colors": [
+    "#FFD400",
+    "#FF2D2D",
+    "#FFFFFF"
+   ],
+   "bright": 1
+  },
+  {
+   "t": 63,
+   "section": "Post-chorus",
+   "fx": "Strobe",
+   "colors": [
+    "#FFD400"
+   ],
+   "bright": 1
+  },
+  {
+   "t": 76,
+   "section": "Verse 2 (old-school switch)",
+   "fx": "Wave",
+   "colors": [
+    "#3D6BFF",
+    "#00E5FF"
+   ],
+   "bright": 0.75,
+   "spread": 0.6
+  },
+  {
+   "t": 101,
+   "section": "Pre-chorus",
+   "fx": "Pulse",
+   "colors": [
+    "#FF2D2D"
+   ],
+   "bright": 0.9
+  },
+  {
+   "t": 113,
+   "section": "Chorus",
+   "fx": "Chase",
+   "colors": [
+    "#FFD400",
+    "#FF2D2D",
+    "#FFFFFF"
+   ],
+   "bright": 1
+  },
+  {
+   "t": 139,
+   "section": "Bridge",
+   "fx": "Solid",
+   "colors": [
+    "#A24BFF"
+   ],
+   "bright": 0.45
+  },
+  {
+   "t": 158,
+   "section": "Final chorus",
+   "fx": "Sparkle",
+   "colors": [
+    "#FFD400",
+    "#FFFFFF",
+    "#FF2D2D"
+   ],
+   "bright": 1
+  },
+  {
+   "t": 186,
+   "section": "Outro",
+   "fx": "Pulse",
+   "colors": [
+    "#B8860B"
+   ],
+   "bright": 0.5
+  }
  ]
 }
