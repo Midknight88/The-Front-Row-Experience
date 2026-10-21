@@ -1,0 +1,24 @@
+{
+ "format": "front-row-show/1",
+ "id": "skz-this-and-that",
+ "title": "This & That",
+ "artist": "Stray Kids",
+ "tempo": "listen",
+ "duration": 194,
+ "youtube": {"id": "BZ4UzthYTss", "offset": 0},
+ "draft": true,
+ "notes": "Concept: choosing both. Every section pairs two colors that trade places, warm and icy like the 'iced Americano' hook. Laid-back groove, so mostly Wave and Pulse; the big Sparkle is saved for the last hook.",
+ "cues": [
+  {"t": 0,   "section": "Intro",        "fx": "Pulse",   "colors": ["#C98A4B"], "bright": 0.5},
+  {"t": 10,  "section": "Verse 1",      "fx": "Wave",    "colors": ["#C98A4B", "#6CF0C2"], "bright": 0.75, "spread": 0.6},
+  {"t": 34,  "section": "Pre-chorus",   "fx": "Pulse",   "colors": ["#00E5FF"], "bright": 0.85, "spread": 0.3},
+  {"t": 46,  "section": "Hook",         "fx": "Chase",   "colors": ["#FF4FD8", "#00E5FF"], "bright": 1},
+  {"t": 59,  "section": "Post-hook",    "fx": "Wave",    "colors": ["#FF4FD8", "#3DFF7A"], "bright": 0.9, "spread": 0.8},
+  {"t": 71,  "section": "Verse 2",      "fx": "Wave",    "colors": ["#3D6BFF", "#C98A4B"], "bright": 0.75, "spread": 0.6},
+  {"t": 95,  "section": "Pre-chorus",   "fx": "Pulse",   "colors": ["#00E5FF"], "bright": 0.85, "spread": 0.3},
+  {"t": 107, "section": "Hook",         "fx": "Chase",   "colors": ["#FF4FD8", "#00E5FF", "#FFD400"], "bright": 1},
+  {"t": 133, "section": "Bridge",       "fx": "Solid",   "colors": ["#A24BFF"], "bright": 0.4},
+  {"t": 152, "section": "Final hook",   "fx": "Sparkle", "colors": ["#FF4FD8", "#00E5FF", "#FFFFFF"], "bright": 1},
+  {"t": 178, "section": "Outro",        "fx": "Wave",    "colors": ["#C98A4B", "#6CF0C2"], "bright": 0.5, "spread": 0.6}
+ ]
+}
