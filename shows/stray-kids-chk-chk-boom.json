@@ -9,7 +9,7 @@
  "draft": false,
  "notes": "Concept: lock on, then boom. Hot reggaeton colors (orange, magenta, gold) for the groove, cool aim-and-focus blues for the builds, and every 'Chk Chk Boom' snaps all sticks together into a bright strike. The M/V has skits around the song, so set where the music starts with Song starts here.",
  "cues": [
-  {"t": 0, "section": "Intro", "fx": "Wave", "colors": ["#6444E4", "#F5F5F5"], "bright": 0.55},
+  {"t": 0, "section": "Intro", "fx": "Wave", "colors": ["#3300FF", "#F5F5F5", "#8AADFF"], "bright": 0.55},
   {"t": 8.09, "section": "Verse 1", "fx": "Wave", "colors": ["#FF8A00", "#FF2D9B"], "bright": 0.85, "spread": 0.6},
   {"t": 27.31, "section": "Pre-chorus (aim)", "fx": "Pulse", "colors": ["#8C00FF"], "bright": 0.8, "spread": 0},
   {"t": 36.65, "section": "Chorus (Chk Chk Boom)", "fx": "Pulse", "colors": ["#FF0000", "#A32E2E"], "bright": 1},
