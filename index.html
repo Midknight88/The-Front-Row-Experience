@@ -625,7 +625,9 @@ async function loadSongFile(file){
   }catch(e){note.className="note warn";note.textContent="Couldn't read that file. Try an MP3 or M4A.";audio.buf=null}
 }
 
-function beginShow(){const p=st.play;p.on=true;p.cue=-1;p.mark=1;p.lastT=0;$("markBtn").disabled=false;$("showStart").textContent="Restart"}
+// Mark next section and every "Set to now" work only while a show is playing
+function setPlayButtons(on){$("markBtn").disabled=!on;document.querySelectorAll('#ecues [data-a="now"]').forEach(b=>b.disabled=!on)}
+function beginShow(){const p=st.play;p.on=true;p.cue=-1;p.mark=1;p.lastT=0;setPlayButtons(true);$("showStart").textContent="Restart"}
 function startShow(){
   const show=curShow(),p=st.play;
   if(p.src==="yt"){
@@ -651,11 +653,11 @@ function stopShow(quiet){
   const p=st.play;p.on=false;p.cue=-1;p.follow=false;
   if(audio.src){try{audio.src.onended=null;audio.src.stop()}catch(e){}audio.src=null}
   if(!quiet&&p.src==="yt"&&yt.player&&yt.state===1){try{yt.player.pauseVideo()}catch(e){}}
-  $("showStart").textContent="Start";$("markBtn").disabled=true;markCue(-1);
+  $("showStart").textContent="Start";setPlayButtons(false);markCue(-1);
   if(!quiet&&st.tempoSrc==="show")st.tempoSrc=listen.on?"listen":"manual";
 }
 // Live-tab taps take over the lights without stopping the music
-function leaveShow(){const p=st.play;if(!p.on&&!p.follow)return;p.on=false;p.follow=false;p.cue=-1;markCue(-1);$("markBtn").disabled=true;
+function leaveShow(){const p=st.play;if(!p.on&&!p.follow)return;p.on=false;p.follow=false;p.cue=-1;markCue(-1);setPlayButtons(false);
   $("showStart").textContent="Start";if(st.tempoSrc==="show")st.tempoSrc=listen.on?"listen":"manual"}
 
 // ================= YouTube =================
@@ -850,7 +852,8 @@ function renderEditor(){
       show.dirty=true;renderCues()});
     r.querySelectorAll('input[type=color]').forEach(inp=>inp.oninput=()=>{const j=+inp.dataset.j;const arr=c.colors.slice();while(arr.length<j)arr.push(arr[arr.length-1]||"#FFFFFF");arr[j]=inp.value.toUpperCase();c.colors=arr;inp.removeAttribute("data-empty");show.dirty=true;renderCues()});
     r.querySelector('[data-a="clear"]').onclick=()=>{c.colors=c.colors.slice(0,1);show.dirty=true;renderEditor();renderCues()};
-    r.querySelector('[data-a="now"]').onclick=()=>{c.t=+showClock().toFixed(2);show.dirty=true;renderEditor();renderCues()};
+    r.querySelector('[data-a="now"]').onclick=()=>{if(!st.play.on)return;c.t=+showClock().toFixed(2);show.dirty=true;renderEditor();renderCues();
+      $("saveNote").className="note";$("saveNote").textContent=`Moved "${c.section||"cue"}" to ${fmtT(c.t)}. Tap Save show when you're done.`};
     r.querySelector('[data-a="del"]').onclick=()=>{show.cues.splice(i,1);show.dirty=true;renderEditor();renderCues()};
     box.appendChild(r);
   });
