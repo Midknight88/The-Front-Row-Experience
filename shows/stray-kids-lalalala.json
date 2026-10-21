@@ -1,0 +1,26 @@
+{
+ "format": "front-row-show/1",
+ "id": "skz-lalalala",
+ "title": "LALALALA",
+ "artist": "Stray Kids",
+ "tempo": "listen",
+ "duration": 184,
+ "youtube": {"id": "dBDkYofMUs4", "offset": 0},
+ "draft": true,
+ "notes": "Concept: rock star. Stage-light red, white and black. Builds climb in white, every LALALALA drop hits with a white strobe, the staccato 'rock' rap punches on each beat, and the final chorus goes full arena with sparkle.",
+ "cues": [
+  {"t": 0,   "section": "Intro (piano)",       "fx": "Pulse",   "colors": ["#FF1F2A"], "bright": 0.5},
+  {"t": 6,   "section": "Verse 1 (rap)",       "fx": "Wave",    "colors": ["#FF1F2A", "#FF8A00"], "bright": 0.85, "spread": 0.7},
+  {"t": 28,  "section": "Pre-chorus build",    "fx": "Pulse",   "colors": ["#FFFFFF"], "bright": 0.75},
+  {"t": 40,  "section": "LALALALA drop",       "fx": "Strobe",  "colors": ["#FFFFFF"], "bright": 1},
+  {"t": 46,  "section": "Chorus",              "fx": "Chase",   "colors": ["#FF1F2A", "#FFFFFF", "#8E44FF"], "bright": 1},
+  {"t": 68,  "section": "Verse 2 (rock rap)",  "fx": "Pulse",   "colors": ["#FF1F2A"], "bright": 1, "spread": 0},
+  {"t": 88,  "section": "Pre-chorus build",    "fx": "Pulse",   "colors": ["#FFFFFF"], "bright": 0.75},
+  {"t": 100, "section": "LALALALA drop",       "fx": "Strobe",  "colors": ["#FFFFFF"], "bright": 1},
+  {"t": 106, "section": "Chorus",              "fx": "Chase",   "colors": ["#FF1F2A", "#FFFFFF", "#FF8A00"], "bright": 1},
+  {"t": 128, "section": "Breakdown",           "fx": "Solid",   "colors": ["#5B1A9E"], "bright": 0.35},
+  {"t": 145, "section": "Final chorus",        "fx": "Sparkle", "colors": ["#FF1F2A", "#FFFFFF", "#FFD400"], "bright": 1},
+  {"t": 170, "section": "Outro",               "fx": "Pulse",   "colors": ["#FF1F2A"], "bright": 0.5},
+  {"t": 180, "section": "Blackout",            "fx": "Off",     "colors": [], "bright": 0}
+ ]
+}
