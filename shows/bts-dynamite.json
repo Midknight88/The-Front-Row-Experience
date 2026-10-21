@@ -1,0 +1,28 @@
+{
+ "format": "front-row-show/1",
+ "id": "bts-dynamite",
+ "title": "Dynamite",
+ "artist": "BTS",
+ "bpm": 114,
+ "tempo": "show",
+ "duration": 199,
+ "youtube": {"id": "gdZLi9oWNZg", "offset": 0},
+ "draft": true,
+ "notes": "Concept: retro disco party. Candy pastels (mint, bubblegum pink, sunny yellow) like the M/V's 70s sets, a disco-ball Sparkle on every 'light it up like dynamite' chorus, a mirror-ball rainbow for the bridge, and the key-change final chorus goes full fireworks. Steady 114 BPM disco beat.",
+ "cues": [
+  {"t": 0,   "section": "Intro",          "fx": "Pulse",   "colors": ["#FFD400"], "bright": 0.6},
+  {"t": 8,   "section": "Verse 1",        "fx": "Wave",    "colors": ["#6CF0C2", "#FFB0C8"], "bright": 0.8, "spread": 0.6},
+  {"t": 25,  "section": "Pre-chorus",     "fx": "Pulse",   "colors": ["#FF4FD8"], "bright": 0.85},
+  {"t": 34,  "section": "Chorus",         "fx": "Sparkle", "colors": ["#FFD400", "#FF4FD8", "#6CF0C2"], "bright": 1},
+  {"t": 51,  "section": "Post-chorus (Dy-na-na-na)", "fx": "Chase", "colors": ["#FF8A00", "#FFD400", "#FFFFFF"], "bright": 1},
+  {"t": 59,  "section": "Verse 2",        "fx": "Wave",    "colors": ["#FFB0C8", "#00E5FF"], "bright": 0.8, "spread": 0.6},
+  {"t": 76,  "section": "Pre-chorus",     "fx": "Pulse",   "colors": ["#FF4FD8"], "bright": 0.85},
+  {"t": 85,  "section": "Chorus",         "fx": "Sparkle", "colors": ["#FFD400", "#FF4FD8", "#6CF0C2"], "bright": 1},
+  {"t": 102, "section": "Post-chorus (Dy-na-na-na)", "fx": "Chase", "colors": ["#FF8A00", "#FFD400", "#FFFFFF"], "bright": 1},
+  {"t": 110, "section": "Bridge",         "fx": "Rainbow", "colors": [], "bright": 0.7, "spread": 0.8},
+  {"t": 136, "section": "Final chorus (key change)", "fx": "Strobe", "colors": ["#FFFFFF"], "bright": 1},
+  {"t": 140, "section": "Final chorus",   "fx": "Sparkle", "colors": ["#FFD400", "#FF4FD8", "#FFFFFF"], "bright": 1},
+  {"t": 165, "section": "Outro (Dy-na-na-na)", "fx": "Chase", "colors": ["#FF8A00", "#FF4FD8", "#6CF0C2"], "bright": 0.9},
+  {"t": 190, "section": "Blackout",       "fx": "Off",     "colors": [], "bright": 0}
+ ]
+}
