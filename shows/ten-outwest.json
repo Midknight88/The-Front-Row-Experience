@@ -20,7 +20,7 @@
   {"t": 100.59, "section": "Chorus", "fx": "Chase", "colors": ["#00E5FF", "#8E44FF", "#FFFFFF"], "bright": 1},
   {"t": 107.8, "section": "Drop", "fx": "Strobe", "colors": ["#FFFFFF"], "bright": 1},
   {"t": 114.92, "section": "Dance break", "fx": "Chase", "colors": ["#FF1F2A", "#00E5FF", "#FFFFFF"], "bright": 1},
-  {"t": 129.27, "section": "Bridge", "fx": "Solid", "colors": ["#5B1A9E"], "bright": 0.35},
+  {"t": 129.27, "section": "Bridge", "fx": "Solid", "colors": ["#00E5E1"], "bright": 0.35},
   {"t": 165.08, "section": "Final chorus", "fx": "Sparkle", "colors": ["#00E5FF", "#8E44FF", "#FFFFFF"], "bright": 1},
   {"t": 190.12, "section": "Outro", "fx": "Pulse", "colors": ["#5B1A9E"], "bright": 0.5},
   {"t": 193.72, "section": "Blackout", "fx": "Off", "colors": [], "bright": 0}
