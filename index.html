@@ -192,7 +192,7 @@ code{font-family:var(--mono);font-size:.78rem}
         <div class="panel" id="ytNoShow" hidden style="background:var(--bg)">
           <div><div class="label">No show for this song yet</div><div id="ytNoShowTitle" style="font-weight:600"></div></div>
           <p class="note">Send this video to Claude and you'll get a show built for this exact song and video. It appears in your library on its own.</p>
-          <div class="row"><button id="ytAskClaude" class="primary">Copy request for Claude</button><button id="ytUseDemo" class="ghost">Use the all-purpose show</button><button id="ytRestore" class="primary" hidden>Restore its show</button></div>
+          <div class="row"><button id="ytAskClaude" class="primary">Copy request for Claude</button><button id="ytRestore" class="primary" hidden>Restore its show</button></div>
           <p class="note" id="ytAskNote"></p>
         </div>
         <p class="note" id="ytNote">The song plays here inside the app, so the lights follow the video exactly, even after pausing or skipping.</p>
@@ -307,21 +307,6 @@ const BUILTIN_PROFILES={
   "BTS Light Stick Ver.4 (HYBE)":{prefix:"BTS",alsoService:true,svc:"0001fe01-0000-1000-8000-00805f9800c4",chr:"0001ff02-0000-1000-8000-00805f9800c4",tpl:"01 {r} {g} {b}",resp:false,gap:50},
   "ELK-BLEDOM LED strip (test rig)":{prefix:"ELK-BLEDOM",svc:"0000fff0-0000-1000-8000-00805f9b34fb",chr:"0000fff3-0000-1000-8000-00805f9b34fb",tpl:"7E 07 05 03 {r} {g} {b} 10 EF"}
 };
-// A built-in demo so the Shows tab is never empty. More shows load from shows/index.json in the GitHub repo.
-const DEMO_SHOW={format:"front-row-show/1",id:"demo-generic",title:"Any song (demo)",artist:"Works with anything",bpm:120,tempo:"listen",
-  notes:"A general-purpose show that follows the song's tempo. 8-bar sections, typical K-pop layout.",
-  cues:[
-    {t:0,section:"Intro",fx:"Pulse",colors:["#3D6BFF"],bright:.6},
-    {t:16,section:"Verse",fx:"Wave",colors:["#A24BFF","#3D6BFF"],bright:.8},
-    {t:32,section:"Pre-chorus",fx:"Pulse",colors:["#FF4FD8"],bright:.9},
-    {t:48,section:"Chorus",fx:"Chase",colors:["#FF2D2D","#FFD400","#FF5FA2"],bright:1},
-    {t:64,section:"Verse 2",fx:"Wave",colors:["#00E5FF","#3D6BFF"],bright:.8},
-    {t:80,section:"Chorus",fx:"Strobe",colors:["#FFFFFF"],bright:1},
-    {t:96,section:"Bridge",fx:"Rainbow",colors:[],bright:.7},
-    {t:112,section:"Final chorus",fx:"Sparkle",colors:["#FF5FA2","#FFFFFF","#A24BFF"],bright:1},
-    {t:128,section:"Outro",fx:"Solid",colors:["#FF5FA2"],bright:.5}
-  ]};
-
 // ================= state =================
 const st={color:"#FF5FA2",fx:"Solid",bright:.9,spread:.35,
   bpm:120,anchor:0,              // beat clock: beat = (t - anchor) * bpm / 60   (t in seconds, performance clock)
@@ -998,7 +983,6 @@ $("ytAskClaude").onclick=async()=>{const i=ytInfo(),nt=$("ytAskNote");
   const msg=`NewShow: https://www.youtube.com/watch?v=${i.id}\n(${i.title}${i.channel?" — "+i.channel:""}${i.duration?", "+fmtT(i.duration).replace(/\.\d$/,""):""})`;
   try{await navigator.clipboard.writeText(msg);nt.className="note ok";nt.textContent="Copied. Paste it into your chat with Claude. When the show is ready, reload this page and load the video again."}
   catch(e){nt.className="note";nt.textContent=msg}};
-$("ytUseDemo").onclick=()=>{const d=Object.values(st.shows).find(s=>s.origin==="builtin");if(d){selectShow(d.id,true);$("ytNoShow").hidden=true;$("ytNote").className="note";$("ytNote").textContent="Using the all-purpose show. Turn on Listen to the music on the Live tab so it follows this song's tempo."}};
 $("ytLink").onkeydown=e=>{if(e.key==="Enter")$("ytLoad").click()};
 $("ytSave").onclick=()=>{const show=curShow();if(!show||!yt.vid)return;show.youtube={id:yt.vid,offset:show.youtube?.id===yt.vid?show.youtube.offset:0};renderEditor();saveCurrent();updateYtOffOut();$("ytNote").className="note ok";$("ytNote").textContent=`Saved this video with "${curShow().title}".`};
 $("ytOffNow").onclick=()=>{const show=curShow();if(!show||!yt.player)return;show.youtube={id:yt.vid,offset:+ytTime().toFixed(2)};renderEditor();saveCurrent();updateYtOffOut()};
@@ -1049,7 +1033,6 @@ $("saveProfile").onclick=()=>{
 
 // ================= start =================
 fillProfiles();
-addShow(normalizeShow(DEMO_SHOW,"builtin"));
 Object.values(loadMine()).forEach(o=>{try{const s=normalizeShow(o,"mine");s.id=o.id;addShow(s)}catch(e){}});
 let last=null;try{last=localStorage.getItem("fre.lastShow")}catch(e){}
 st.showId=last&&visibleShows().some(s=>s.id===last)?last:(visibleShows()[0]?.id||null);
