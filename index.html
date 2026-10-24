@@ -45,6 +45,14 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .between{justify-content:space-between}
 .swatches{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+.wheelbox{display:grid;grid-template-columns:minmax(0,220px) 1fr;gap:16px;align-items:center}
+.wheelwrap{position:relative;width:100%;max-width:220px;aspect-ratio:1;touch-action:none}
+.wheelwrap canvas{width:100%;height:100%;display:block;border-radius:50%;cursor:crosshair}
+.wheelknob{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.5);pointer-events:none}
+.wheelside{display:flex;flex-direction:column;gap:10px;min-width:0}
+.cur{width:100%;height:44px;border-radius:12px;border:1px solid var(--line)}
+.hexin{font-family:var(--mono);font-size:.85rem;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px;width:100%;box-sizing:border-box}
+@media (max-width:380px){.wheelbox{grid-template-columns:1fr}.wheelwrap{margin:0 auto}}
 .sw{aspect-ratio:1;border-radius:50%;border:2px solid transparent;cursor:pointer;max-width:100%;padding:0}
 .sw[aria-pressed="true"]{border-color:var(--fg);box-shadow:0 0 0 2px var(--bg) inset}
 .seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
@@ -151,7 +159,16 @@ code{font-family:var(--mono);font-size:.78rem}
 
     <section>
       <div class="row between"><h2>Color</h2><span class="label" id="hexOut">#FF5FA2</span></div>
-      <div class="swatches" id="swatches"></div>
+      <div class="wheelbox">
+        <div class="wheelwrap" id="wheelWrap"><canvas id="wheel" width="440" height="440" aria-label="Color wheel: drag to pick a color"></canvas><div class="wheelknob" id="wheelKnob"></div></div>
+        <div class="wheelside">
+          <div class="cur" id="curColor"></div>
+          <label class="label" for="hexIn">Hex code</label>
+          <input id="hexIn" class="hexin" value="#FF5FA2" maxlength="7" autocomplete="off">
+          <div class="label">Recent</div>
+          <div class="swatches" id="swatches" style="grid-template-columns:repeat(4,1fr)"></div>
+        </div>
+      </div>
     </section>
 
     <section>
@@ -961,9 +978,31 @@ function render(){
     try{localStorage.setItem("fre.tab",name)}catch(e){}};
 });
 
-const sw=$("swatches");
-COLORS.forEach(c=>{const b=document.createElement("button");b.className="sw";b.style.background=c;b.setAttribute("aria-label",c);b.setAttribute("aria-pressed",c===st.color);
-  b.onclick=()=>{st.color=c;leaveShow();$("hexOut").textContent=c;sw.querySelectorAll(".sw").forEach(x=>x.setAttribute("aria-pressed",x===b))};sw.appendChild(b)});
+// ---------- color wheel: hue around the circle, white in the middle (saturation); brightness is the slider below ----------
+const sw=$("swatches"),wheel=$("wheel"),knob=$("wheelKnob");
+let recent=[];try{recent=JSON.parse(localStorage.getItem("fre.recent")||"null")||[]}catch(e){}
+if(!recent.length)recent=["#FF5FA2","#FF2D2D","#FFD400","#3DFF7A","#00E5FF","#3D6BFF","#A24BFF","#FFFFFF"];
+function rgb2hs(c){const[r,g,b]=c.map(v=>v/255),mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;
+  if(d){h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h/=6;if(h<0)h+=1}return[h,mx?d/mx:0]}
+(function drawWheel(){const ctx=wheel.getContext("2d"),W=wheel.width,R=W/2,img=ctx.createImageData(W,W);
+  for(let y=0;y<W;y++)for(let x=0;x<W;x++){const dx=x-R,dy=y-R,d=Math.hypot(dx,dy)/R,i=(y*W+x)*4;if(d>1){img.data[i+3]=0;continue}
+    const h=((Math.atan2(dy,dx)/(2*Math.PI))+1)%1,c=hsv(h,Math.min(1,d),1);img.data[i]=c[0];img.data[i+1]=c[1];img.data[i+2]=c[2];img.data[i+3]=d>.985?Math.round((1-d)/.015*255):255}
+  ctx.putImageData(img,0,0)})();
+function placeKnob(hex){const[h,s2]=rgb2hs(hex2rgb(hex)),a=h*2*Math.PI;knob.style.left=(50+Math.cos(a)*s2*50)+"%";knob.style.top=(50+Math.sin(a)*s2*50)+"%";knob.style.background=hex}
+function renderRecent(){sw.innerHTML="";recent.slice(0,8).forEach(c=>{const b=document.createElement("button");b.className="sw";b.style.background=c;b.setAttribute("aria-label",c);b.setAttribute("aria-pressed",c===st.color);b.onclick=()=>setColor(c,true);sw.appendChild(b)})}
+function remember(c){recent=[c,...recent.filter(x=>x!==c)].slice(0,8);try{localStorage.setItem("fre.recent",JSON.stringify(recent))}catch(e){}renderRecent()}
+function setColor(c,commit){c=c.toUpperCase();st.color=c;leaveShow();$("hexOut").textContent=c;$("curColor").style.background=c;if(document.activeElement!==$("hexIn"))$("hexIn").value=c;placeKnob(c);
+  if(commit)remember(c);else sw.querySelectorAll(".sw").forEach(x=>x.setAttribute("aria-pressed","false"))}
+let dragging=false;
+function pick(e){const r=wheel.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+  const d=Math.min(1,Math.hypot(x,y)*2),h=((Math.atan2(y,x)/(2*Math.PI))+1)%1;setColor(rgb2hex(hsv(h,d,1)),false)}
+wheel.addEventListener("pointerdown",e=>{dragging=true;wheel.setPointerCapture(e.pointerId);pick(e)});
+wheel.addEventListener("pointermove",e=>{if(dragging)pick(e)});
+const endDrag=()=>{if(dragging){dragging=false;remember(st.color)}};
+wheel.addEventListener("pointerup",endDrag);wheel.addEventListener("pointercancel",endDrag);
+$("hexIn").addEventListener("input",e=>{let v=e.target.value.trim();if(!v.startsWith("#"))v="#"+v;if(/^#[0-9a-f]{6}$/i.test(v))setColor(v,false)});
+$("hexIn").addEventListener("change",()=>{if(/^#[0-9a-f]{6}$/i.test(st.color))remember(st.color);$("hexIn").value=st.color});
+setColor(st.color,false);renderRecent();
 const fxBox=$("effects");
 EFFECTS.forEach(f=>{const b=document.createElement("button");b.textContent=f;b.setAttribute("aria-pressed",f===st.fx);
   b.onclick=()=>{st.fx=f;leaveShow();fxBox.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b))};fxBox.appendChild(b)});
