@@ -292,6 +292,31 @@ code{font-family:var(--mono);font-size:.78rem}
       </div>
     </section>
 
+    <details id="lab">
+      <summary>Light stick lab (for sticks without an app)</summary>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+        <p class="note">Sends raw test commands to a connected stick to find its format. The stick stops following the app while the lab is on. Nothing here writes to the stick's firmware-update channel. If a stick gets stuck in an odd mode, turn it off and on (or take a battery out).</p>
+        <div class="grid2">
+          <div class="field"><label class="label" for="labStick">Stick</label><select id="labStick"></select></div>
+          <div class="field"><label class="label" for="labSpeed">Speed</label><select id="labSpeed"><option value="5">5 per second</option><option value="10">10 per second</option><option value="20" selected>20 per second</option></select></div>
+          <div class="field"><label class="label" for="labSvc">Service</label><input id="labSvc" value="0000a00a-0000-1000-8000-00805f9b34fb"></div>
+          <div class="field"><label class="label" for="labNotify">Reply channel (notify)</label><input id="labNotify" value="0000b003-0000-1000-8000-00805f9b34fb"></div>
+        </div>
+        <div class="row"><button id="labOn" class="primary">Start lab</button><button id="labLen">1 · Check lengths</button></div>
+        <div class="label">2 · Sweep</div>
+        <div class="grid2">
+          <div class="field"><label class="label" for="labChr">Channel</label><select id="labChr"><option value="0000b002-0000-1000-8000-00805f9b34fb">B002</option><option value="0000b001-0000-1000-8000-00805f9b34fb">B001</option></select></div>
+          <div class="field"><label class="label" for="labPos">Vary byte positions (1 = first)</label><input id="labPos" value="1" placeholder="e.g. 1 or 1,2"></div>
+          <div class="field full" style="grid-column:1/-1"><label class="label" for="labBase">Starting bytes (hex)</label><input id="labBase" value="00 FF 00 00 00"></div>
+        </div>
+        <div class="row"><button id="labGo" class="primary">Start sweep</button><button id="labStop">Stop</button><button id="labBack" class="small">◀ Back one</button><button id="labFwd" class="small">Forward one ▶</button><button id="labAgain" class="small">Send again</button></div>
+        <div class="row"><input id="labSend" class="hexin" style="flex:1;min-width:0" placeholder="Send one command, e.g. 01 FF 00 00"><button id="labSendBtn" class="small">Send to channel</button></div>
+        <div id="labNow" style="font-family:var(--mono);font-size:1.1rem;font-weight:600">—</div>
+        <pre id="labLog" style="font-family:var(--mono);font-size:.72rem;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;max-height:220px;overflow:auto;white-space:pre-wrap;margin:0"></pre>
+        <div class="row"><button id="labCopy" class="small">Copy log for Claude</button><button id="labClear" class="small ghost">Clear log</button></div>
+      </div>
+    </details>
+
     <details>
       <summary>Bluetooth protocol profile</summary>
       <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
@@ -580,7 +605,7 @@ function tick(nowMs){
     let [rgb,lvl]=frameColor(fx,colors,i,n,beat,spread);let b=lvl*bright;
     if(d.identUntil>nowMs){rgb=[255,255,255];b=Math.floor(nowMs/250)%2?1:0}   // Identify: blink white for 3 s
     if(d.el){d.el.style.setProperty("--c",rgb2hex(rgb));d.el.style.setProperty("--b",b.toFixed(3))}
-    if(d.kind==="ble")sendBle(d,rgb.map(v=>v*b));
+    if(d.kind==="ble"&&!d.lab)sendBle(d,rgb.map(v=>v*b));
   });
   // now-playing strip
   $("nowSec").textContent=st.play.on&&show?`${show.title} · ${secLabel}`:secLabel;
@@ -973,6 +998,65 @@ Reply with only JSON in this format:
 Guidelines: one cue per song section in order; match colors to the group's fandom color and the song's mood and concept; save Strobe and Sparkle for the biggest moments; use Off or low brightness for quiet breaks; include any tempo changes. Put "draft": true because the timing will be fine-tuned in the app.`;
 
 // ================= stick list UI =================
+// ================= light stick lab =================
+const lab={d:null,svc:null,notify:null,run:false,i:0,pos:[0],base:[],total:256,lines:[],lastSent:""};
+const hx=a=>[...a].map(v=>v.toString(16).padStart(2,"0").toUpperCase()).join(" ");
+const parseHex=t=>{const p=String(t).trim().split(/[\s,:-]+/).filter(Boolean);if(!p.length||p.some(x=>!/^[0-9a-f]{1,2}$/i.test(x)))return null;return new Uint8Array(p.map(x=>parseInt(x,16)))};
+const short=u=>/^0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb$/i.test(u)?u.slice(4,8).toUpperCase():u.slice(0,8);
+function labLog(t){const tm=new Date().toTimeString().slice(0,8);lab.lines.push(`${tm} ${t}`);if(lab.lines.length>400)lab.lines.shift();const el=$("labLog");el.textContent=lab.lines.join("\n");el.scrollTop=el.scrollHeight}
+function labSticks(){const sel=$("labStick"),cur=sel.value;sel.innerHTML="";st.devices.filter(d=>d.kind==="ble").forEach(d=>{const o=document.createElement("option");o.value=d.id;o.textContent=d.name;sel.appendChild(o)});if(cur)sel.value=cur;
+  if(!sel.options.length){const o=document.createElement("option");o.textContent="Connect a stick first";o.value="";sel.appendChild(o)}}
+async function labStart(){
+  const d=st.devices.find(x=>x.id===$("labStick").value&&x.kind==="ble");if(!d){labLog("Connect the stick with + Bluetooth (or Show all nearby devices) first.");return false}
+  if(lab.d&&lab.d!==d)lab.d.lab=false;
+  try{const server=d.dev.gatt.connected?d.dev.gatt:await d.dev.gatt.connect();lab.svc=await server.getPrimaryService($("labSvc").value.trim().toLowerCase())}
+  catch(e){labLog("Couldn't open that service: "+e.message);return false}
+  lab.d=d;d.lab=true;$("labOn").textContent="Lab on · "+d.name;
+  try{const n=await lab.svc.getCharacteristic($("labNotify").value.trim().toLowerCase());if(n!==lab.notify){lab.notify=n;
+      n.addEventListener("characteristicvaluechanged",e=>{const v=new Uint8Array(e.target.value.buffer);labLog(`← REPLY ${short(n.uuid)}: ${hx(v)}   (after sending ${lab.lastSent||"nothing yet"})`);if(lab.run){labStopRun();labLog("Sweep paused because the stick replied.")}});
+      await n.startNotifications();labLog("Listening for replies on "+short(n.uuid));}}
+  catch(e){labLog("No reply channel ("+e.message+"). Continuing without it.")}
+  for(const u of ["0000b001-0000-1000-8000-00805f9b34fb","0000b002-0000-1000-8000-00805f9b34fb"]){try{const c=await lab.svc.getCharacteristic(u);const v=new Uint8Array((await c.readValue()).buffer);labLog(`${short(u)} currently reads: ${hx(v)||"(empty)"}`)}catch(e){}}
+  return true;
+}
+async function labWrite(uuid,bytes){
+  const c=await lab.svc.getCharacteristic(uuid);lab.lastSent=`${short(uuid)} ${hx(bytes)}`;$("labNow").textContent=lab.lastSent;
+  if(c.properties.write||!c.properties.writeWithoutResponse)await c.writeValueWithResponse(bytes);else await c.writeValueWithoutResponse(bytes);
+}
+async function labLengths(){
+  if(!lab.d&&!(await labStart()))return;
+  for(const u of ["0000b001-0000-1000-8000-00805f9b34fb","0000b002-0000-1000-8000-00805f9b34fb"]){
+    const ok=[],bad=[];
+    for(let n=1;n<=20;n++){try{await labWrite(u,new Uint8Array(n));ok.push(n)}catch(e){bad.push(n)}await new Promise(r=>setTimeout(r,60))}
+    let back="";try{const c=await lab.svc.getCharacteristic(u);back=hx(new Uint8Array((await c.readValue()).buffer))}catch(e){}
+    labLog(`${short(u)} accepts lengths: ${ok.join(",")||"none"}${bad.length?` · rejects: ${bad.join(",")}`:""} · reads back: ${back||"(empty)"}`);
+  }
+}
+function labSetup(){
+  const base=parseHex($("labBase").value);if(!base){labLog("Starting bytes must be hex, like 00 FF 00 00 00");return false}
+  const pos=$("labPos").value.split(/[\s,]+/).filter(Boolean).map(x=>parseInt(x,10)-1);
+  if(!pos.length||pos.some(p=>isNaN(p)||p<0||p>=base.length)){labLog(`Positions must be between 1 and ${base.length}`);return false}
+  if(pos.length>3){labLog("Vary at most 3 positions at once (3 is already 16.7 million values).");return false}
+  lab.base=base;lab.pos=pos;lab.total=Math.pow(256,pos.length);return true;
+}
+function labBytes(i){const b=new Uint8Array(lab.base);lab.pos.forEach((p,k)=>{b[p]=Math.floor(i/Math.pow(256,lab.pos.length-1-k))%256});return b}
+async function labGo(){
+  if(!lab.d&&!(await labStart()))return;if(!labSetup())return;
+  if(lab.run)return;lab.run=true;$("labGo").disabled=true;
+  const uuid=$("labChr").value,gap=1000/(+$("labSpeed").value);
+  const mins=Math.round((lab.total-lab.i)*gap/60000);labLog(`Sweep ${short(uuid)} positions ${lab.pos.map(p=>p+1).join(",")} from ${hx(labBytes(lab.i))} · ${lab.total} values${mins?` · about ${mins} min`:""}`);
+  let errs=0;
+  while(lab.run&&lab.i<lab.total){const t0=performance.now();
+    try{await labWrite(uuid,labBytes(lab.i))}catch(e){if(++errs<=3)labLog(`✗ rejected ${hx(labBytes(lab.i))}: ${e.message}`)}
+    lab.i++;const w=gap-(performance.now()-t0);if(w>0)await new Promise(r=>setTimeout(r,w));}
+  if(lab.i>=lab.total){labLog(`Sweep finished (${errs} rejected).`);lab.i=0}
+  labStopRun();
+}
+function labStopRun(){if(lab.run)labLog(`Stopped at ${lab.lastSent}`);lab.run=false;$("labGo").disabled=false}
+async function labStep(k){if(!lab.d&&!(await labStart()))return;if(!labSetup())return;labStopRun();lab.i=Math.max(0,Math.min(lab.total-1,lab.i-1+k));
+  try{await labWrite($("labChr").value,labBytes(lab.i));labLog(`Sent ${lab.lastSent}`)}catch(e){labLog("✗ "+e.message)}lab.i++}
+function labOff(){if(lab.d)lab.d.lab=false;lab.d=null;lab.run=false;$("labOn").textContent="Start lab"}
+
 function render(){
   const stage=$("stage");stage.innerHTML="";
   st.devices.forEach(d=>{
@@ -980,6 +1064,7 @@ function render(){
     s.innerHTML=`<div class="bulb"></div><div class="handle"></div><div class="sname"><span class="dot ${d.kind==="ble"?"live":""}"></span>${esc(d.name)}</div>`;
     d.el=s.querySelector(".bulb");stage.appendChild(s);
   });
+  if($("labStick"))labSticks();
   const list=$("devices");list.innerHTML="";
   st.devices.forEach((d,i)=>{
     const r=document.createElement("div");r.className="dev";
@@ -1080,6 +1165,14 @@ function fillProfiles(){pSel.innerHTML="";Object.keys(st.profiles).forEach(k=>{c
 function loadProfile(){const p=st.profiles[st.profile];$("pNamePrefix").value=p.prefix;$("pSvc").value=p.svc;$("pChr").value=p.chr;$("pTpl").value=p.tpl;$("pKey").value=p.key||"";$("pResp").value=p.resp?"1":"0"}
 pSel.onchange=()=>{st.profile=pSel.value;loadProfile()};
 $("addVirtual").onclick=()=>addVirtual();
+$("labOn").onclick=()=>{if(lab.d){labOff();labLog("Lab off; the stick follows the app again.")}else labStart()};
+$("labLen").onclick=labLengths;$("labGo").onclick=labGo;$("labStop").onclick=labStopRun;
+$("labBack").onclick=()=>labStep(-1);$("labFwd").onclick=()=>labStep(1);$("labAgain").onclick=()=>labStep(0);
+["labBase","labPos","labChr"].forEach(id=>$(id).addEventListener("change",()=>{lab.i=0}));
+$("labSendBtn").onclick=async()=>{const b=parseHex($("labSend").value);if(!b){labLog("Type hex bytes, like 01 FF 00 00");return}if(!lab.d&&!(await labStart()))return;
+  try{await labWrite($("labChr").value,b);labLog(`Sent ${lab.lastSent}`)}catch(e){labLog(`✗ rejected ${hx(b)}: ${e.message}`)}};
+$("labCopy").onclick=async()=>{const t="Light stick lab log:\n"+lab.lines.join("\n");try{await navigator.clipboard.writeText(t);labLog("Log copied.")}catch(e){labLog("Couldn't copy; select the log text instead.")}};
+$("labClear").onclick=()=>{lab.lines=[];$("labLog").textContent=""};
 $("reconBanner").onclick=()=>{$("tab-sticks").click();$("reconnect").scrollIntoView?.({behavior:"smooth",block:"center"})};
 $("refreshShows").onclick=async()=>{const b=$("refreshShows"),before=JSON.stringify(Object.values(st.shows).filter(s=>s.origin==="repo").map(showKey));b.disabled=true;b.textContent="Checking…";
   await loadRepoShows();const after=JSON.stringify(Object.values(st.shows).filter(s=>s.origin==="repo").map(showKey));
