@@ -323,6 +323,16 @@ const BUILTIN_PROFILES={
   "P1Harmony Light Stick Ver.1":{prefix:"P1H",svc:"00010203-0405-0607-0809-0a0b0c0d1911",chr:"00010203-0405-0607-0809-0a0b0c0d2b19",tpl:"01 01 0B 00 00 {r} {g} {b} 00 00 {sum2}",resp:true,gap:50},
   "ATEEZ Light Stick (LIGHTINY)":{prefix:"",alsoService:true,svc:"8ec91001-f315-4f60-9fb8-838830daea50",chr:"8ec91002-f315-4f60-9fb8-838830daea50",tpl:"01 00 00 {r} {g} {b} 00 00",resp:false,gap:40},
   "BTS Light Stick Ver.4 (HYBE)":{prefix:"BTS",alsoService:true,svc:"0001fe01-0000-1000-8000-00805f9800c4",chr:"0001ff02-0000-1000-8000-00805f9800c4",tpl:"01 {r} {g} {b}",resp:false,gap:50},
+  "ONEUS test 1: B002 · R G B 0 0":{prefix:"ONEUS",alsoService:true,svc:"0000a00a-0000-1000-8000-00805f9b34fb",chr:"0000b002-0000-1000-8000-00805f9b34fb",tpl:"{r} {g} {b} 00 00",resp:true,gap:60,group:"oneus"},
+  "ONEUS test 2: B002 · 1 R G B 0":{prefix:"ONEUS",svc:"0000a00a-0000-1000-8000-00805f9b34fb",chr:"0000b002-0000-1000-8000-00805f9b34fb",tpl:"01 {r} {g} {b} 00",resp:true,gap:60,group:"oneus"},
+  "ONEUS test 3: B002 · 0 R G B 0":{prefix:"ONEUS",svc:"0000a00a-0000-1000-8000-00805f9b34fb",chr:"0000b002-0000-1000-8000-00805f9b34fb",tpl:"00 {r} {g} {b} 00",resp:true,gap:60,group:"oneus"},
+  "ONEUS test 4: B002 · R G B":{prefix:"ONEUS",svc:"0000a00a-0000-1000-8000-00805f9b34fb",chr:"0000b002-0000-1000-8000-00805f9b34fb",tpl:"{r} {g} {b}",resp:true,gap:60,group:"oneus"},
+  "ONEUS test 5: B002 · 1 R G B FF":{prefix:"ONEUS",svc:"0000a00a-0000-1000-8000-00805f9b34fb",chr:"0000b002-0000-1000-8000-00805f9b34fb",tpl:"01 {r} {g} {b} FF",resp:true,gap:60,group:"oneus"},
+  "ONEUS test 6: B002 · R G B FF 0":{prefix:"ONEUS",svc:"0000a00a-0000-1000-8000-00805f9b34fb",chr:"0000b002-0000-1000-8000-00805f9b34fb",tpl:"{r} {g} {b} FF 00",resp:true,gap:60,group:"oneus"},
+  "ONEUS test 7: B001 · R G B 0 0":{prefix:"ONEUS",svc:"0000a00a-0000-1000-8000-00805f9b34fb",chr:"0000b001-0000-1000-8000-00805f9b34fb",tpl:"{r} {g} {b} 00 00",resp:true,gap:60,group:"oneus"},
+  "ONEUS test 8: B001 · 1 R G B 0":{prefix:"ONEUS",svc:"0000a00a-0000-1000-8000-00805f9b34fb",chr:"0000b001-0000-1000-8000-00805f9b34fb",tpl:"01 {r} {g} {b} 00",resp:true,gap:60,group:"oneus"},
+  "ONEUS test 9: B001 · 0 R G B 0":{prefix:"ONEUS",svc:"0000a00a-0000-1000-8000-00805f9b34fb",chr:"0000b001-0000-1000-8000-00805f9b34fb",tpl:"00 {r} {g} {b} 00",resp:true,gap:60,group:"oneus"},
+  "ONEUS test 10: B001 · R G B":{prefix:"ONEUS",svc:"0000a00a-0000-1000-8000-00805f9b34fb",chr:"0000b001-0000-1000-8000-00805f9b34fb",tpl:"{r} {g} {b}",resp:true,gap:60,group:"oneus"},
   "ELK-BLEDOM LED strip (test rig)":{prefix:"ELK-BLEDOM",svc:"0000fff0-0000-1000-8000-00805f9b34fb",chr:"0000fff3-0000-1000-8000-00805f9b34fb",tpl:"7E 07 05 03 {r} {g} {b} 10 EF"}
 };
 // ================= state =================
@@ -403,7 +413,8 @@ const usableProfiles=()=>Object.entries(st.profiles).filter(([,p])=>p.svc&&p.chr
 function allStickOptions(){
   const filters=[],svcs=new Set();let any=false;
   usableProfiles().forEach(([,p])=>{svcs.add(p.svc);const o=bleOptions(p);if(o.acceptAllDevices)any=true;else filters.push(...o.filters)});
-  return any||!filters.length?{acceptAllDevices:true,optionalServices:[...svcs]}:{filters,optionalServices:[...svcs]};
+  const seen=new Set(),uniq=filters.filter(f=>{const k=JSON.stringify(f);if(seen.has(k))return false;seen.add(k);return true});
+  return any||!uniq.length?{acceptAllDevices:true,optionalServices:[...svcs]}:{filters:uniq,optionalServices:[...svcs]};
 }
 // Best guesses for a stick, most likely first: a profile whose name prefix matches, then the rest
 function profileCandidates(dev,hint){
@@ -488,8 +499,10 @@ function placeDevice(d){
   st.devices.splice(at,0,d);
 }
 // profiles that use the same Bluetooth service as this stick (for example P1Harmony Ver.1 and Ver.2)
-function siblingProfiles(d){const cur=st.profiles[d.profile];if(!cur)return[];return Object.keys(st.profiles).filter(n=>{const p=st.profiles[n];return p.svc===cur.svc&&p.chr===cur.chr})}
-function setStickType(d,name){const p=st.profiles[name];if(!p)return;Object.assign(d,{profile:name,tpl:p.tpl,key:p.key||"",resp:!!p.resp,gap:p.gap||45,last:""});rememberDev(d.id,d.name,name);d.identUntil=performance.now()+2000;render()}
+function siblingProfiles(d){const cur=st.profiles[d.profile];if(!cur)return[];return Object.keys(st.profiles).filter(n=>{const p=st.profiles[n];return (cur.group&&p.group===cur.group)||(p.svc===cur.svc&&p.chr===cur.chr)})}
+async function setStickType(d,name){const p=st.profiles[name];if(!p)return;const old=st.profiles[d.profile];
+  if(old&&p.chr!==old.chr&&d.chr&&d.chr.service){try{d.chr=await d.chr.service.getCharacteristic(p.chr)}catch(e){$("bleNote").textContent=`${d.name} doesn't have that channel.`;$("bleNote").hidden=false;return}}
+  Object.assign(d,{profile:name,tpl:p.tpl,key:p.key||"",resp:!!p.resp,gap:p.gap||45,last:""});rememberDev(d.id,d.name,name);render()}
 function moveDevice(d,step){
   const i=st.devices.indexOf(d),j=i+step;if(j<0||j>=st.devices.length)return;
   [st.devices[i],st.devices[j]]=[st.devices[j],st.devices[i]];saveOrder();render();
