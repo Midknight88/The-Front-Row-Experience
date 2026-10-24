@@ -1013,14 +1013,17 @@ async function labStart(){
   catch(e){labLog("Couldn't open that service: "+e.message);return false}
   lab.d=d;d.lab=true;$("labOn").textContent="Lab on · "+d.name;
   try{const n=await lab.svc.getCharacteristic($("labNotify").value.trim().toLowerCase());if(n!==lab.notify){lab.notify=n;
-      n.addEventListener("characteristicvaluechanged",e=>{const v=new Uint8Array(e.target.value.buffer);labLog(`← REPLY ${short(n.uuid)}: ${hx(v)}   (after sending ${lab.lastSent||"nothing yet"})`);if(lab.run){labStopRun();labLog("Sweep paused because the stick replied.")}});
+      n.addEventListener("characteristicvaluechanged",e=>{const v=hx(new Uint8Array(e.target.value.buffer));
+        // many sample firmwares just echo what was written: count those quietly, only stop for a different reply
+        if(lab.lastBytes&&(v===lab.lastBytes||lab.lastBytes.startsWith(v)||v.startsWith(lab.lastBytes))){lab.echo=(lab.echo||0)+1;if(lab.echo===1)labLog("(The stick echoes what you send. Echoes are ignored from now on.)");return}
+        labLog(`← REPLY ${short(n.uuid)}: ${v}   (after sending ${lab.lastSent||"nothing yet"})`);if(lab.run){labStopRun();labLog("Sweep paused because the stick sent a different reply.")}});
       await n.startNotifications();labLog("Listening for replies on "+short(n.uuid));}}
   catch(e){labLog("No reply channel ("+e.message+"). Continuing without it.")}
   for(const u of ["0000b001-0000-1000-8000-00805f9b34fb","0000b002-0000-1000-8000-00805f9b34fb"]){try{const c=await lab.svc.getCharacteristic(u);const v=new Uint8Array((await c.readValue()).buffer);labLog(`${short(u)} currently reads: ${hx(v)||"(empty)"}`)}catch(e){}}
   return true;
 }
 async function labWrite(uuid,bytes){
-  const c=await lab.svc.getCharacteristic(uuid);lab.lastSent=`${short(uuid)} ${hx(bytes)}`;$("labNow").textContent=lab.lastSent;
+  const c=await lab.svc.getCharacteristic(uuid);lab.lastSent=`${short(uuid)} ${hx(bytes)}`;lab.lastBytes=hx(bytes);$("labNow").textContent=lab.lastSent;
   if(c.properties.write||!c.properties.writeWithoutResponse)await c.writeValueWithResponse(bytes);else await c.writeValueWithoutResponse(bytes);
 }
 async function labLengths(){
