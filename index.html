@@ -301,7 +301,7 @@ const BUILTIN_PROFILES={
   "Generic (fill in)":{prefix:"",svc:"",chr:"",tpl:"{r} {g} {b}"},
   "Stray Kids Light Stick V2":{prefix:"STRAY KIDS",svc:"00000000-0000-1000-8000-00805f9b34fb",chr:"00000000-0000-1000-8000-00805f9b34fb",tpl:"82 01 {r} {g} {b} 00 00 00 00 00 FD 47 52 41 56 45",key:"2174516473A1F5351004A13E6B716AB9",resp:true,gap:70},
   "MONSTA X Light Stick V3":{prefix:"MONSTA",alsoService:true,svc:"00000000-0000-1000-8000-00805f9b34fb",chr:"00000000-0000-1000-8000-00805f9b34fb",tpl:"82 01 {r} {g} {b} 00 00 00 00 00 FD 47 52 41 56 45",key:"2174516473A1F5351004A13E6B716AB9",resp:true,gap:70},
-  "The Rose Light Stick Ver.2":{prefix:"THE ROSE",alsoService:true,svc:"00010203-0405-0607-0809-0a0b0c0d1911",chr:"00010203-0405-0607-0809-0a0b0c0d2b19",tpl:"01 FF 00 {r} {g} {b} 00 00 {sum2}",resp:true,gap:50},
+  "The Rose Light Stick Ver.2":{prefix:"THE ROSE OLS",alsoService:true,svc:"00010203-0405-0607-0809-0a0b0c0d1911",chr:"00010203-0405-0607-0809-0a0b0c0d2b19",tpl:"01 FF 00 {r} {g} {b} 00 00 {sum2}",resp:true,gap:50},
   "P1Harmony Light Stick Ver.2":{prefix:"P1H",svc:"00010203-0405-0607-0809-0a0b0c0d1911",chr:"00010203-0405-0607-0809-0a0b0c0d2b19",tpl:"01 FF 00 {r} {g} {b} 00 00 {sum2}",resp:true,gap:50},
   "P1Harmony Light Stick Ver.1":{prefix:"P1H",svc:"00010203-0405-0607-0809-0a0b0c0d1911",chr:"00010203-0405-0607-0809-0a0b0c0d2b19",tpl:"01 01 0B 00 00 {r} {g} {b} 00 00 {sum2}",resp:true,gap:50},
   "ATEEZ Light Stick (LIGHTINY)":{prefix:"",alsoService:true,svc:"8ec91001-f315-4f60-9fb8-838830daea50",chr:"8ec91002-f315-4f60-9fb8-838830daea50",tpl:"01 00 00 {r} {g} {b} 00 00",resp:false,gap:40},
@@ -393,7 +393,7 @@ function profileCandidates(dev,hint){
   const name=(dev.name||"").toUpperCase(),all=usableProfiles();
   const byName=all.filter(([,p])=>p.prefix&&name.startsWith(p.prefix.toUpperCase())).sort((a,b)=>b[1].prefix.length-a[1].prefix.length);
   // P1Harmony: sticks named "...2" are the second version
-  byName.sort((a,b)=>{const v2=/2\s*$/.test(name);const s=x=>/Ver\.2/.test(x[0])===v2?0:1;return s(a)-s(b)});
+  if(name.startsWith("P1H"))byName.sort((a,b)=>{const v2=/2\s*$/.test(name);const s=x=>/Ver\.2/.test(x[0])===v2?0:1;return s(a)-s(b)});
   const names=[hint,...byName.map(x=>x[0]),...all.filter(([,p])=>p.alsoService).map(x=>x[0]),...all.map(x=>x[0])].filter(Boolean);
   return [...new Set(names)].filter(n=>st.profiles[n]);
 }
