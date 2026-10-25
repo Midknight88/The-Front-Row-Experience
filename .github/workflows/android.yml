@@ -69,9 +69,12 @@ jobs:
       - name: Check the app
         run: |
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
-          "$BT/aapt2" dump badging FrontRow.apk | grep -E "^package|uses-permission|launchable|sdkVersion"
-          unzip -p FrontRow.apk assets/capacitor.config.json
-          unzip -l FrontRow.apk | grep -c "res/mipmap" 
+          B=$("$BT/aapt2" dump badging FrontRow.apk || true)
+          echo "$B" | grep -E "^package|uses-permission|launchable|sdkVersion" || true
+          echo "::notice title=App::$(echo "$B" | grep -oE "^package: name='[^']+'|versionName='[^']+'" | tr '\n' ' ')$(echo "$B" | grep -oE "targetSdkVersion:'[0-9]+'")"
+          echo "::notice title=Permissions::$(echo "$B" | grep -oE "uses-permission: name='[^']+'" | sed -E "s/.*android.permission.//; s/'//" | tr '\n' ' ')"
+          echo "::notice title=Loads::$(unzip -p FrontRow.apk assets/capacitor.config.json | tr -d '\n ' | grep -oE '"url":"[^"]+"')"
+          echo "::notice title=Bluetooth plugin::$(unzip -p FrontRow.apk assets/capacitor.plugins.json | tr -d '\n ' )"
 
       - uses: actions/upload-artifact@v5
         with:
