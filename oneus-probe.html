@@ -308,7 +308,7 @@ async function doStep(idx,total,step,interactive){
   log(`[${idx}/${total}] ${kind} ${target.toUpperCase()} ← ${hx(bytes)} · ${parts.join(" · ")}`);
   const row={step:idx,kind,target,sent:hx(bytes),error:err,before,after,changed,echoes,replies:replies.join(" | "),disconnected:disc,led:""};
   S.rows.push(row);renderRows();
-  if(interactive&&!disc&&!S.stopReq){row.led=await askLed();if(row.led)log(`   LED: ${row.led}`);renderRows()}
+  if(interactive&&!disc&&!S.stopReq){row.asked=true;row.led=await askLed();if(row.led)log(`   LED: ${row.led}`);renderRows()}
   return row;
 }
 function askLed(){
@@ -321,6 +321,7 @@ async function run(){
   if(S.running)return;
   S.plan=buildPlan();if(!S.plan.length){$("nowDetail").textContent="Pick at least one channel and one group of steps.";return}
   S.running=true;S.paused=false;S.stopReq=false;S.i=0;
+  if(S.rows.length){S.rows=[];renderRows();log("---- new run ----")}
   $("run").disabled=true;$("oneSend").disabled=true;$("pause").disabled=false;$("pause").textContent="Pause";$("stop").disabled=false;
   log(`Running ${S.plan.length} steps (${$("mode").value==="ask"?"asking after each":"auto"})`);
   const interactive=$("mode").value==="ask";
@@ -370,8 +371,9 @@ function renderRows(){
 }
 function lengthsAccepted(target){
   const L=S.rows.filter(r=>r.target===target&&r.kind==="length");if(!L.length)return null;
-  const ok=L.filter(r=>!r.error).map(r=>r.sent.split(" ").length),bad=L.filter(r=>r.error).map(r=>r.sent.split(" ").length);
-  return `${target.toUpperCase()} accepts lengths ${ok.join(",")||"none"}${bad.length?` · rejects ${bad.join(",")}`:""}`;
+  const len=r=>r.sent.split(" ").length,uniq=a=>[...new Set(a)].sort((x,y)=>x-y).join(",");
+  const ok=L.filter(r=>!r.error).map(len),bad=L.filter(r=>r.error).map(len),kept=L.filter(r=>!r.error&&(r.echoes||r.changed)).map(len);
+  return `${target.toUpperCase()} accepts lengths ${uniq(ok)||"none"}${bad.length?` · rejects ${uniq(bad)}`:""} · stores only ${uniq(kept)||"none"}`;
 }
 function summaryItems(){
   const R=S.rows;if(!R.length)return[];
@@ -380,7 +382,7 @@ function summaryItems(){
   const acc=R.filter(r=>!r.error).length;out.push(`${acc} of ${R.length} writes accepted`);
   const echo=R.filter(r=>r.echoes).length;if(echo)out.push(`${echo} writes were echoed back unchanged on B003`);
   const pick=(title,f)=>{const h=R.filter(f);out.push(`${title}: ${h.length?h.slice(0,12).map(r=>`#${r.step} ${r.target.toUpperCase()} ${r.sent}`).join("; ")+(h.length>12?` (+${h.length-12} more)`:""):"none"}`)};
-  pick("LED reacted",r=>r.led);
+  if(R.some(r=>r.asked))pick("LED reacted",r=>r.led);else out.push("LED: not checked (run was in auto mode)");
   pick("Different reply on B003",r=>r.replies);
   pick("Caused a disconnect",r=>r.disconnected);
   const stored=R.filter(r=>!r.error&&r.after&&r.after!==r.before);
