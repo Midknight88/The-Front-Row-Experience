@@ -4,6 +4,14 @@ A phone web app that drives K-pop light sticks over Bluetooth, all in sync, the 
 
 Open it in Chrome on Android (or the Bluefy browser on iPhone). Everything is in `index.html`.
 
+## Android app
+
+`app/` wraps the live site in a native Android app (Capacitor + the `@capacitor-community/bluetooth-le` plugin). The app loads https://midknight88.github.io/The-Front-Row-Experience/, so every web update reaches it without reinstalling; only changes in `app/` need a new APK.
+
+In the app, Bluetooth goes through the native plugin instead of Web Bluetooth: it scans on its own and connects every stick that matches a known profile (by name prefix, or by advertised service for profiles with `alsoService`), with no chooser. It asks once whether this phone should connect automatically (use it on one phone per house, since a stick accepts one phone at a time). Removing a stick stops it auto-connecting until **Find sticks** picks it up again. Profiles marked `noAuto` (the LED-strip test rig) never auto-connect.
+
+GitHub Actions (`.github/workflows/android.yml`) builds the APK on every push to `app/`, signs it with the key in the repo secrets `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD` and `ANDROID_KEY_ALIAS`, and publishes it as a release. Install link: https://github.com/Midknight88/The-Front-Row-Experience/releases/latest/download/FrontRow.apk
+
 ## Shows
 
 Shows live in `shows/`. The app loads every file listed in `shows/index.json`.

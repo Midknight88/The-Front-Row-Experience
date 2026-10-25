@@ -16,13 +16,13 @@ jobs:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
@@ -66,7 +66,14 @@ jobs:
           fi
           "$BT/apksigner" verify --print-certs FrontRow.apk | head -3
 
-      - uses: actions/upload-artifact@v4
+      - name: Check the app
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/aapt2" dump badging FrontRow.apk | grep -E "^package|uses-permission|launchable|sdkVersion"
+          unzip -p FrontRow.apk assets/capacitor.config.json
+          unzip -l FrontRow.apk | grep -c "res/mipmap" 
+
+      - uses: actions/upload-artifact@v5
         with:
           name: FrontRow-apk
           path: app/FrontRow.apk

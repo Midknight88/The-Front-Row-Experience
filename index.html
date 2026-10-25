@@ -67,6 +67,7 @@ button:disabled{opacity:.35;cursor:default}
 .slider{display:grid;grid-template-columns:90px 1fr 48px;gap:10px;align-items:center}
 .slider output{font-family:var(--mono);font-size:.8rem;text-align:right;font-variant-numeric:tabular-nums}
 input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent);flex:none}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
 .dev{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
 .dev:first-child{border-top:0}
@@ -126,6 +127,11 @@ code{font-family:var(--mono);font-size:.78rem}
   <div class="stage" id="stage" aria-label="Connected light sticks"></div>
 
   <button id="reconBanner" class="primary" hidden>Reconnect your light sticks</button>
+  <div id="autoAsk" class="panel" hidden><div style="display:flex;flex-direction:column;gap:10px">
+    <b>Connect to your light sticks automatically?</b>
+    <p class="note">Front Row will find the light sticks that are switched on and connect them by itself whenever the app is open. If more than one phone in the house has Front Row, turn this on for just one, so the phones don't take each other's sticks.</p>
+    <div class="row"><button id="autoYes" class="primary">Yes, connect automatically</button><button id="autoNo" class="ghost">Not now</button></div>
+  </div></div>
 
   <div class="now" aria-live="polite">
     <div class="sec" id="nowSec">Live control</div>
@@ -285,7 +291,12 @@ code{font-family:var(--mono);font-size:.78rem}
       </div>
       <div id="devices"></div>
       <p class="note warn" id="bleNote" hidden></p>
-      <p class="note">Stick not in the list? <button id="addBleAll" class="small ghost">Show all nearby devices</button></p>
+      <p class="note"><span id="bleAllText">Stick not in the list?</span> <button id="addBleAll" class="small ghost">Show all nearby devices</button></p>
+      <div id="nativeBox" hidden><div style="display:flex;flex-direction:column;gap:8px">
+        <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="autoConnect"> <span>Connect to light sticks automatically on this phone</span></label>
+        <p class="note" id="scanState" aria-live="polite"></p>
+        <div id="scanList" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div></div>
       <div id="reconnect" class="panel" hidden style="background:var(--bg)">
         <div><div class="label">Reconnect after reload</div><p class="note">The browser closes Bluetooth when the page reloads. Tap each stick, then pick it in the list. Make sure SKZ V2 and other light stick apps are closed.</p></div>
         <div id="reconnectList" style="display:flex;flex-direction:column;gap:6px"></div>
@@ -324,7 +335,7 @@ const BUILTIN_PROFILES={
   "ATEEZ Light Stick (LIGHTINY)":{prefix:"",alsoService:true,svc:"8ec91001-f315-4f60-9fb8-838830daea50",chr:"8ec91002-f315-4f60-9fb8-838830daea50",tpl:"01 00 00 {r} {g} {b} 00 00",resp:false,gap:40},
   "WONHO Light Stick (BEATRO)":{prefix:"WONHO",alsoService:true,svc:"8ec91001-f315-4f60-9fb8-838830daea50",chr:"8ec91002-f315-4f60-9fb8-838830daea50",tpl:"01 00 00 {r} {g} {b} 00 00",resp:false,gap:40},
   "BTS Light Stick Ver.4 (HYBE)":{prefix:"BTS",alsoService:true,svc:"0001fe01-0000-1000-8000-00805f9800c4",chr:"0001ff02-0000-1000-8000-00805f9800c4",tpl:"01 {r} {g} {b}",resp:false,gap:50},
-  "ELK-BLEDOM LED strip (test rig)":{prefix:"ELK-BLEDOM",svc:"0000fff0-0000-1000-8000-00805f9b34fb",chr:"0000fff3-0000-1000-8000-00805f9b34fb",tpl:"7E 07 05 03 {r} {g} {b} 10 EF"}
+  "ELK-BLEDOM LED strip (test rig)":{prefix:"ELK-BLEDOM",noAuto:true,svc:"0000fff0-0000-1000-8000-00805f9b34fb",chr:"0000fff3-0000-1000-8000-00805f9b34fb",tpl:"7E 07 05 03 {r} {g} {b} 10 EF"}
 };
 // ================= state =================
 const st={color:"#FF5FA2",fx:"Solid",bright:.9,spread:.35,
@@ -383,6 +394,7 @@ async function aesBlock(keyHex,data){
   return out.slice(0,16);
 }
 async function addBle(showAll){
+  if(NATIVE)return nativeFind(showAll===true);
   const note=$("bleNote");note.hidden=true;
   if(!navigator.bluetooth){note.textContent="This browser can't reach Bluetooth. Open this page in Chrome on Android (or the Bluefy browser on iPhone), served over https. Virtual sticks still work here.";note.hidden=false;return}
   try{
@@ -441,6 +453,7 @@ function pendingSticks(){const k=knownDevs(),live=new Set(st.devices.filter(d=>d
   return loadOrder().filter(id=>k[id]&&!live.has(id)).map(id=>({id,...k[id]})).concat(Object.entries(k).filter(([id])=>!loadOrder().includes(id)&&!live.has(id)).map(([id,v])=>({id,...v})))}
 let wasConnected=[];try{wasConnected=JSON.parse(sessionStorage.getItem("fre.live")||"[]")}catch(e){}
 function renderReconnect(){
+  if(NATIVE){$("reconnect").hidden=true;$("reconBanner").hidden=true;return}
   const list=$("reconnectList");list.innerHTML="";
   const pend=pendingSticks().filter(p=>wasConnected.includes(p.id));
   $("reconnect").hidden=!pend.length;$("reconBanner").hidden=!pend.length;
@@ -456,6 +469,7 @@ function renderReconnect(){
 }
 // Chrome with experimental Web Bluetooth features can hand back permitted sticks after a reload: reconnect them automatically
 async function autoReconnect(){
+  if(NATIVE)return;
   if(!navigator.bluetooth?.getDevices)return;
   let devs=[];try{devs=await navigator.bluetooth.getDevices()}catch(e){return}
   const k=knownDevs();
@@ -467,6 +481,137 @@ async function autoReconnect(){
 setInterval(()=>{try{const live=st.devices.filter(d=>d.kind==="ble").map(d=>d.id);if(live.length)sessionStorage.setItem("fre.live",JSON.stringify([...new Set([...live,...wasConnected.filter(id=>!st.devices.some(d=>d.id===id))])]))}catch(e){}},2000);
 // warn before leaving while sticks are connected
 addEventListener("beforeunload",e=>{if(st.devices.some(d=>d.kind==="ble")){try{sessionStorage.setItem("fre.live",JSON.stringify(st.devices.filter(d=>d.kind==="ble").map(d=>d.id)))}catch(x){}e.preventDefault();e.returnValue=""}});
+// ================= Android app: native Bluetooth (Capacitor + bluetooth-le plugin) =================
+// In the Android app the page gets a Web Bluetooth look-alike built on the native plugin, so the
+// rest of the app (connectDevice, sendBle, sticks list) works unchanged. On top of that it scans
+// by itself and connects every known light stick it hears.
+const CAP=window.Capacitor,NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform()&&CAP.registerPlugin);
+const BLE=NATIVE?CAP.registerPlugin("BluetoothLe"):null;
+const fullUuid=u=>{u=String(u||"").toLowerCase().trim().replace(/^0x/,"");return /^[0-9a-f]{4}$/.test(u)?`0000${u}-0000-1000-8000-00805f9b34fb`:/^[0-9a-f]{8}$/.test(u)?`${u}-0000-1000-8000-00805f9b34fb`:u};
+const hexOf=d=>{const a=d instanceof Uint8Array?d:ArrayBuffer.isView(d)?new Uint8Array(d.buffer,d.byteOffset,d.byteLength):new Uint8Array(d);return [...a].map(v=>v.toString(16).padStart(2,"0")).join("")};
+const dvOf=h=>new DataView(new Uint8Array((String(h||"").match(/[0-9a-f]{2}/gi)||[]).map(x=>parseInt(x,16))).buffer);
+const notFound=m=>Object.assign(new Error(m),{name:"NotFoundError"});
+const nativeDevs={};
+function nativeDevice(id,name){
+  if(nativeDevs[id]){if(name)nativeDevs[id].name=name;return nativeDevs[id]}
+  let svcs=[],chain=Promise.resolve();const on={},cache={};
+  const q=f=>{const run=chain.then(()=>f());chain=run.catch(()=>{});return run};   // one Bluetooth operation at a time per stick
+  const fire=t=>(on[t]||[]).forEach(f=>{try{f({target:dev})}catch(e){}});
+  const dev={id,name:name||"Light stick",native:true,
+    addEventListener:(t,f)=>(on[t]=on[t]||[]).push(f),removeEventListener:(t,f)=>{on[t]=(on[t]||[]).filter(x=>x!==f)}};
+  const mkChr=(s,c,svc)=>{const k=s.uuid+c.uuid;if(cache[k])return cache[k];const lis=[];
+    const args={deviceId:id,service:s.uuid,characteristic:c.uuid};
+    const chr={uuid:c.uuid,service:svc,properties:{...(c.properties||{})},value:null,
+      writeValueWithResponse:d=>q(()=>BLE.write({...args,value:hexOf(d)})),
+      writeValueWithoutResponse:d=>q(()=>BLE.writeWithoutResponse({...args,value:hexOf(d)})),
+      readValue:()=>q(async()=>{const r=await BLE.read(args);chr.value=dvOf(r&&r.value);return chr.value}),
+      async startNotifications(){
+        if(!chr._n){chr._n=true;await BLE.addListener(`notification|${id}|${s.uuid}|${c.uuid}`,e=>{chr.value=dvOf(e&&e.value);lis.forEach(f=>{try{f({target:chr})}catch(x){}})})}
+        await q(()=>BLE.startNotifications(args));return chr},
+      stopNotifications:()=>q(()=>BLE.stopNotifications(args)),
+      addEventListener:(t,f)=>{if(t==="characteristicvaluechanged")lis.push(f)},removeEventListener:(t,f)=>{const i=lis.indexOf(f);if(i>=0)lis.splice(i,1)}};
+    chr.writeValue=chr.writeValueWithResponse;return cache[k]=chr};
+  dev.gatt={device:dev,connected:false,
+    async connect(){
+      if(!dev._dl){dev._dl=true;await BLE.addListener(`disconnected|${id}`,()=>{dev.gatt.connected=false;fire("gattserverdisconnected");nativeLost()})}
+      await BLE.connect({deviceId:id,timeout:12000});
+      svcs=((await BLE.getServices({deviceId:id}))||{}).services||[];
+      dev.gatt.connected=true;return dev.gatt},
+    disconnect(){dev.gatt.connected=false;BLE.disconnect({deviceId:id}).catch(()=>{})},
+    async getPrimaryService(u){u=fullUuid(u);const s=svcs.find(x=>String(x.uuid).toLowerCase()===u);if(!s)throw notFound("This stick doesn't have that service");
+      const svc={uuid:s.uuid,device:dev,async getCharacteristic(cu){cu=fullUuid(cu);const c=(s.characteristics||[]).find(x=>String(x.uuid).toLowerCase()===cu);if(!c)throw notFound("This stick doesn't have that channel");return mkChr(s,c,svc)}};
+      return svc}};
+  return nativeDevs[id]=dev;
+}
+// which known stick type a scanned device is, from its name (then its advertised service)
+function stickMatch(name,uuids){
+  const N=(name||"").toUpperCase(),U=(uuids||[]).map(u=>String(u).toLowerCase()),all=usableProfiles().filter(([,p])=>!p.noAuto);
+  const byName=all.filter(([,p])=>p.prefix&&N.startsWith(p.prefix.toUpperCase())).sort((a,b)=>b[1].prefix.length-a[1].prefix.length);
+  if(byName.length)return byName[0][0];
+  const bySvc=all.find(([,p])=>p.alsoService&&U.includes(p.svc.toLowerCase()));
+  return bySvc?bySvc[0]:null;
+}
+const autoOn=()=>lsGet("fre.auto")==="1";
+const ignoredIds=()=>{try{return JSON.parse(lsGet("fre.ignored")||"[]")}catch(e){return[]}};
+const setIgnored=(id,on)=>{const s=new Set(ignoredIds());on?s.add(id):s.delete(id);lsSet("fre.ignored",JSON.stringify([...s]))};
+let bleReadyP=null;
+function bleReady(){
+  return bleReadyP=bleReadyP||(async()=>{
+    try{await BLE.initialize({androidNeverForLocation:true})}catch(e){throw new Error("Front Row needs the Nearby devices permission to find light sticks. Allow it in Android Settings > Apps > Front Row > Permissions.")}
+    let on=(await BLE.isEnabled()).value;
+    if(!on){try{await BLE.requestEnable()}catch(e){}on=(await BLE.isEnabled()).value}
+    if(!on)throw new Error("Bluetooth is off. Turn it on, then tap Find sticks.");
+  })().catch(e=>{bleReadyP=null;throw e});
+}
+let scan={on:false,timer:null,handle:null,all:false,manual:false,found:{},last:0};
+const pendingIds=new Set();let connectChain=Promise.resolve();
+function queueConnect(id,name,prof,manual){
+  if(pendingIds.has(id))return;pendingIds.add(id);renderScan();
+  connectChain=connectChain.then(async()=>{
+    try{await connectDevice(nativeDevice(id,name),prof);if(manual)setIgnored(id,false)}
+    catch(e){if(manual){$("bleNote").textContent=`Couldn't connect ${name||"that device"}: ${e.message}`;$("bleNote").hidden=false}}
+    finally{pendingIds.delete(id);renderScan()}});
+}
+function onScanResult(r){
+  const id=r&&r.device&&r.device.deviceId;if(!id)return;
+  const name=r.localName||r.device.name||"",prof=stickMatch(name,r.uuids);
+  if(scan.all){scan.found[id]={id,name,rssi:r.rssi,prof};renderScan();return}
+  if(!prof||st.devices.some(d=>d.id===id&&d.kind==="ble"))return;
+  if(!scan.manual&&ignoredIds().includes(id))return;
+  queueConnect(id,name,prof,scan.manual);
+}
+async function stopScan(){
+  clearTimeout(scan.timer);if(!scan.on)return;scan.on=false;
+  try{await BLE.stopLEScan()}catch(e){}try{await scan.handle?.remove()}catch(e){}scan.handle=null;renderScan();
+}
+async function nativeScan({ms=12000,all=false,manual=false,mode=2}={}){
+  await bleReady();
+  await stopScan();
+  Object.assign(scan,{on:true,all,manual,found:all?{}:scan.found,last:Date.now()});renderScan();
+  scan.handle=await BLE.addListener("onScanResult",onScanResult);
+  try{await BLE.requestLEScan({allowDuplicates:false,scanMode:mode})}catch(e){await stopScan();throw e}
+  scan.timer=setTimeout(stopScan,ms);
+}
+let lostTimer=null;
+// a dropped stick: start a fresh scan (a running scan reports each device only once)
+function nativeLost(){if(!autoOn())return;clearTimeout(lostTimer);lostTimer=setTimeout(()=>{if(!document.hidden&&!scan.all)nativeScan({ms:10000,mode:1}).catch(()=>{})},3000)}
+function renderScan(){
+  if(!NATIVE)return;
+  const live=st.devices.filter(d=>d.kind==="ble").length;
+  $("scanState").textContent=scan.on?(scan.all?"Listing every nearby Bluetooth device…":"Looking for light sticks…"):
+    pendingIds.size?"Connecting…":live?`${live} light stick${live===1?"":"s"} connected.`:autoOn()?"No sticks connected yet. Turn a stick on (Bluetooth mode) and it will connect by itself.":"Tap Find sticks to connect the light sticks that are on.";
+  $("addBle").disabled=scan.on&&!scan.all;$("addBle").textContent=scan.on&&!scan.all?"Looking…":"Find sticks";
+  const list=$("scanList");list.innerHTML="";
+  if(!scan.all)return;
+  Object.values(scan.found).sort((a,b)=>(b.rssi||-999)-(a.rssi||-999)).forEach(f=>{
+    const b=document.createElement("button");b.className="ghost";b.style.textAlign="left";
+    const connected=st.devices.some(d=>d.id===f.id&&d.kind==="ble");
+    b.innerHTML=`<b>${esc(f.name||"(no name)")}</b> <span class="note">${connected?"connected":pendingIds.has(f.id)?"connecting…":f.prof?esc(f.prof):"unknown type"}${f.rssi?` · ${f.rssi} dBm`:""}</span>`;
+    b.disabled=connected;b.onclick=()=>queueConnect(f.id,f.name,f.prof,true);list.appendChild(b)});
+  if(!scan.on&&!Object.keys(scan.found).length)list.innerHTML='<p class="note">Nothing found. Make sure the stick is on and in Bluetooth mode.</p>';
+}
+async function nativeFind(all){
+  const note=$("bleNote");note.hidden=true;
+  try{await nativeScan({ms:all?15000:12000,all,manual:true})}catch(e){note.textContent=e.message;note.hidden=false}
+}
+function setAuto(on){
+  lsSet("fre.auto",on?"1":"0");$("autoConnect").checked=on;$("autoAsk").hidden=true;renderScan();
+  if(on)nativeScan({ms:15000}).catch(e=>{$("bleNote").textContent=e.message;$("bleNote").hidden=false});else stopScan();
+}
+function nativeStart(){
+  document.documentElement.classList.add("native-app");
+  $("nativeBox").hidden=false;$("addBle").textContent="Find sticks";
+  $("bleAllText").textContent="Stick not connecting?";
+  $("autoConnect").checked=autoOn();
+  $("autoConnect").onchange=()=>setAuto($("autoConnect").checked);
+  $("autoYes").onclick=()=>setAuto(true);$("autoNo").onclick=()=>setAuto(false);
+  $("autoAsk").hidden=lsGet("fre.auto")!==null;
+  if(autoOn())nativeScan({ms:15000}).catch(()=>{});
+  renderScan();
+  // keep listening for sticks that are switched on later, while the app is on screen
+  setInterval(()=>{if(autoOn()&&!document.hidden&&!scan.on&&Date.now()-scan.last>25000)nativeScan({ms:6000,mode:1}).catch(()=>{})},30000);
+  document.addEventListener("visibilitychange",()=>{if(document.hidden)stopScan();else if(autoOn())nativeScan({ms:10000}).catch(()=>{})});
+}
 async function sendBle(d,rgb){
   const key=rgb.map(v=>Math.round(v/4)).join(",");
   const now=performance.now();
@@ -955,6 +1100,7 @@ Guidelines: one cue per song section in order; match colors to the group's fando
 
 // ================= stick list UI =================
 function render(){
+  if(NATIVE)setTimeout(renderScan,0);
   const stage=$("stage");stage.innerHTML="";
   st.devices.forEach(d=>{
     const s=document.createElement("div");s.className="stick "+d.shape;
@@ -971,7 +1117,7 @@ function render(){
     r.querySelector('[data-a="up"]').onclick=()=>moveDevice(d,-1);
     r.querySelector('[data-a="down"]').onclick=()=>moveDevice(d,1);
     r.querySelector('[data-a="id"]').onclick=()=>{d.identUntil=performance.now()+3000};
-    r.querySelector('[data-a="rm"]').onclick=()=>{try{d.chr?.service?.device?.gatt?.disconnect()}catch(e){}st.devices.splice(st.devices.indexOf(d),1);render()};
+    r.querySelector('[data-a="rm"]').onclick=()=>{if(NATIVE&&d.dev)setIgnored(d.id,true);try{d.chr?.service?.device?.gatt?.disconnect()}catch(e){}st.devices.splice(st.devices.indexOf(d),1);render();renderScan()};
     list.appendChild(r);
   });
 }
@@ -1084,9 +1230,10 @@ renderLib();renderCues();renderEditor();
 loadRepoShows();
 setSource(["yt","file","tap"].includes(lsGet("fre.src"))?lsGet("fre.src"):"yt");
 
-["Stick 1","Stick 2","Stick 3","Stick 4"].forEach(n=>addVirtual(n));
+if(!NATIVE)["Stick 1","Stick 2","Stick 3","Stick 4"].forEach(n=>addVirtual(n));
 try{const t=localStorage.getItem("fre.tab");if(t&&$("tab-"+t))$("tab-"+t).click()}catch(e){}
 renderReconnect();autoReconnect();
+if(NATIVE)nativeStart();
 requestAnimationFrame(tick);
 })();
 </script>
