@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ONEUS Probe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=Figtree:wght@400;600&display=swap">
+<style>
+/* Same look as The Front Row Experience. Layout: one column — connect, stick info, plan, live step, results. */
+:root{
+  --bg:#0c0b14; --panel:#16141f; --line:#2a2638; --fg:#ece9f5; --muted:#8f89a6; --accent:#ff5fa2; --ok:#4fd1a5; --warn:#ffb547; --bad:#ff6b6b;
+  --display:"Bricolage Grotesque",system-ui,sans-serif; --body:"Figtree",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:15px;line-height:1.45;padding:16px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px))}
+.wrap{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font-family:var(--display);font-weight:800;font-size:1.8rem;letter-spacing:-.02em;margin:0}
+h2{font-family:var(--display);font-weight:500;font-size:1.05rem;margin:0}
+.sub{color:var(--muted);margin:4px 0 0;font-size:.9rem}
+.label{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
+button{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#1a0010;font-weight:600}
+button.ghost{background:transparent}
+button.small{padding:6px 10px;font-size:.8rem}
+button:disabled{opacity:.35;cursor:default}
+.note{font-size:.82rem;color:var(--muted);margin:0}
+.note.warn{color:var(--warn)} .note.ok{color:var(--ok)} .note.bad{color:var(--bad)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.85rem}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-family:var(--mono);font-size:.78rem;word-break:break-all}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px}
+.checks label{display:flex;gap:8px;align-items:flex-start;font-size:.88rem}
+.checks input{margin-top:3px;accent-color:var(--accent)}
+.checks small{display:block;color:var(--muted);font-size:.75rem}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field input,.field select{font-family:var(--mono);font-size:.82rem;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px;width:100%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.now{font-family:var(--mono);font-size:1.05rem;font-weight:600;word-break:break-all}
+.ask{border:1px solid var(--accent);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.ask .row button{flex:1}
+pre{font-family:var(--mono);font-size:.72rem;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;max-height:260px;overflow:auto;white-space:pre-wrap;margin:0}
+table{width:100%;min-width:520px;border-collapse:collapse;font-size:.75rem;font-family:var(--mono)}
+td:nth-child(-n+3),th{white-space:nowrap;word-break:normal}
+th,td{text-align:left;padding:5px 6px;border-top:1px solid var(--line);vertical-align:top;word-break:break-all}
+th{color:var(--muted);font-weight:400;border-top:0}
+tr.hit td{color:var(--fg);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.tbl{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.chip{font-family:var(--mono);font-size:.65rem;padding:2px 6px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 50%,transparent)}
+.chip.bad{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 50%,transparent)}
+.chip.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 50%,transparent)}
+.sum li{margin:2px 0;font-size:.85rem}
+.sum code{font-family:var(--mono);font-size:.78rem}
+@media (max-width:420px){.grid2,.checks{grid-template-columns:1fr}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="label">The Front Row Experience · tools</div>
+    <h1>ONEUS probe</h1>
+    <p class="sub">Runs the probing plan against the ONEUS-CHEERBONG stick's Realtek service <code>0xA00A</code> and logs every reaction. Writes only ever go to B001 and B002; the firmware-update service is read, never written.</p>
+  </header>
+
+  <!-- Connect -->
+  <section class="panel">
+    <div class="row between">
+      <h2>1 · Connect</h2>
+      <span class="chip" id="connChip">Not connected</span>
+    </div>
+    <p class="note">Hold the stick's buttons to enter Bluetooth mode (blinking blue), then connect right away; it only advertises for a short window. Close nRF Connect and other apps that might hold the stick.</p>
+    <div class="row">
+      <button id="connect" class="primary">Connect to ONEUS stick</button>
+      <button id="connectAll" class="small ghost">Show all nearby devices</button>
+      <button id="reconnect" class="small" hidden>Reconnect</button>
+      <button id="disconnect" class="small ghost" hidden>Disconnect</button>
+    </div>
+    <p class="note warn" id="connNote" hidden></p>
+  </section>
+
+  <!-- Stick info -->
+  <section class="panel" id="infoPanel" hidden>
+    <h2>Stick info</h2>
+    <dl class="kv" id="info"></dl>
+    <p class="note">Baseline values of B001 and B002 are saved now and written back when the run ends or stops.</p>
+  </section>
+
+  <!-- Plan -->
+  <section class="panel">
+    <h2>2 · Probing plan</h2>
+    <div class="label">Channels</div>
+    <div class="checks">
+      <label><input type="checkbox" id="tB002" checked><span>B002<small>probed first</small></span></label>
+      <label><input type="checkbox" id="tB001" checked><span>B001</span></label>
+    </div>
+    <div class="label">Steps</div>
+    <div class="checks" id="groups"></div>
+    <div class="grid2">
+      <div class="field"><label class="label" for="delay">Watch time after each write</label>
+        <select id="delay"><option value="0.6">0.6 s</option><option value="1" >1 s</option><option value="1.5" selected>1.5 s</option><option value="2.5">2.5 s</option></select></div>
+      <div class="field"><label class="label" for="mode">After each step</label>
+        <select id="mode"><option value="ask" selected>Ask me what the LED did</option><option value="auto">Keep going (auto)</option></select></div>
+    </div>
+    <p class="note" id="planCount"></p>
+    <div class="row">
+      <button id="run" class="primary" disabled>Run plan</button>
+      <button id="pause" disabled>Pause</button>
+      <button id="stop" class="ghost" disabled>Stop &amp; restore</button>
+    </div>
+  </section>
+
+  <!-- Live step -->
+  <section class="panel">
+    <div class="row between"><h2>3 · Now</h2><span class="label" id="progTxt">0 / 0</span></div>
+    <div class="bar"><i id="progBar"></i></div>
+    <div class="now" id="now">—</div>
+    <div class="note" id="nowDetail"></div>
+    <div class="ask" id="ask" hidden>
+      <div style="font-weight:600">Did the stick's light change?</div>
+      <div class="row">
+        <button id="askNo">No change</button>
+        <button id="askYes" class="primary">Yes, it changed</button>
+      </div>
+      <div class="field" id="askWhatBox" hidden>
+        <label class="label" for="askWhat">What happened? (color, blink, off…)</label>
+        <input id="askWhat" placeholder="e.g. turned red">
+        <button id="askSave" class="primary">Save &amp; continue</button>
+      </div>
+    </div>
+    <div class="label">Send one command</div>
+    <div class="row">
+      <select id="oneTarget" style="font-family:var(--mono);background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px"><option value="b002">B002</option><option value="b001">B001</option></select>
+      <input id="oneHex" class="field" style="flex:1;min-width:0;font-family:var(--mono);font-size:.82rem;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:9px" placeholder="hex, e.g. 01 FF 00 00">
+      <button id="oneSend" class="small" disabled>Send</button>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <section class="panel">
+    <div class="row between"><h2>4 · Results</h2><span class="label" id="resCount"></span></div>
+    <ul class="sum" id="summary"><li class="note">Run the plan to see what the stick reacted to.</li></ul>
+    <div class="tbl"><table><thead><tr><th>#</th><th>Ch</th><th>Sent</th><th>Result</th><th>LED</th></tr></thead><tbody id="rows"></tbody></table></div>
+    <div class="row">
+      <button id="copyLog" class="small">Copy results for Claude</button>
+      <button id="csv" class="small">Download CSV</button>
+      <button id="clear" class="small ghost">Clear</button>
+    </div>
+    <details>
+      <summary class="label" style="cursor:pointer">Raw log</summary>
+      <pre id="log"></pre>
+    </details>
+  </section>
+</div>
+
+<script>
+(() => {
+// ================= constants =================
+const u16=x=>`0000${x.toString(16).padStart(4,"0")}-0000-1000-8000-00805f9b34fb`;
+const SVC=u16(0xA00A), NOTIFY=u16(0xB003);
+const WRITABLE={b001:u16(0xB001),b002:u16(0xB002)};          // the ONLY characteristics this page writes
+const OTA_SVC="0000d0ff-3c17-d293-8e48-14fe2e4da212";          // Realtek OTA: read-only here
+const DIS=u16(0x180A), BAT=u16(0x180F);
+const DIS_CHARS=[[0x2A29,"Manufacturer"],[0x2A24,"Model"],[0x2A26,"Firmware"],[0x2A27,"Hardware"],[0x2A28,"Software"],[0x2A23,"System ID"],[0x2A50,"PnP ID"]];
+const RGB_SHAPES=["FF000000","00FF0000","0000FF00","000000FF","01FF0000","0100FF00","010000FF","FF0000FF","00FF00FF","0000FFFF","FFFFFFFF"];
+const GROUPS=[
+  {id:"length",name:"Lengths",hint:"zero-filled, 1–8 bytes",on:true,make:()=>[1,2,3,4,5,6,8].map(n=>new Uint8Array(n))},
+  {id:"opcode",name:"Single opcodes",hint:"00 … 10",on:true,make:()=>range(0,16).map(o=>Uint8Array.of(o))},
+  {id:"opcode4",name:"4-byte opcodes",hint:"01 00 00 00 … 10 00 00 00",on:true,make:()=>range(1,16).map(o=>Uint8Array.of(o,0,0,0))},
+  {id:"rgb",name:"RGB shapes",hint:"4 bytes, e.g. FF000000, 01FF0000",on:true,make:()=>RGB_SHAPES.map(fromHex)},
+  {id:"rgb5",name:"RGB shapes, 5 bytes",hint:"same shapes padded to 5 bytes",on:true,make:()=>RGB_SHAPES.map(h=>fromHex(h+"00"))}
+];
+function range(a,b){const r=[];for(let i=a;i<=b;i++)r.push(i);return r}
+
+// ================= helpers =================
+const $=id=>document.getElementById(id);
+const hx=a=>[...a].map(v=>v.toString(16).padStart(2,"0").toUpperCase()).join(" ");
+function fromHex(t){const s=String(t).replace(/[\s,:-]/g,"");if(!s||s.length%2||/[^0-9a-f]/i.test(s))return null;return new Uint8Array(s.match(/../g).map(h=>parseInt(h,16)))}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const short=u=>/^0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb$/i.test(u)?u.slice(4,8).toUpperCase():u.slice(0,8);
+const ts=()=>new Date().toTimeString().slice(0,8);
+
+// ================= state =================
+const S={dev:null,svc:null,chars:{},notify:null,baseline:{},notes:[],lastSent:null,
+  plan:[],i:0,running:false,paused:false,stopReq:false,rows:[],lines:[],askResolve:null,writing:false};
+
+function log(t){S.lines.push(`${ts()} ${t}`);if(S.lines.length>2000)S.lines.shift();const el=$("log");el.textContent=S.lines.join("\n");el.scrollTop=el.scrollHeight}
+function setConn(state,txt){const c=$("connChip");c.textContent=txt;c.className="chip "+({on:"ok",lost:"bad",busy:"warn"}[state]||"");
+  const on=state==="on";$("run").disabled=!on||S.running;$("oneSend").disabled=!on||S.running;
+  $("disconnect").hidden=!on;$("reconnect").hidden=state!=="lost"||!S.dev}
+function connNote(t,cls="warn"){const n=$("connNote");n.textContent=t||"";n.className="note "+cls;n.hidden=!t}
+
+// ================= connect =================
+async function connect(all){
+  connNote("");
+  if(!navigator.bluetooth){connNote("This browser can't reach Bluetooth. Open this page in Chrome on Android (or Bluefy on iPhone) from its https address.");return}
+  try{
+    const opt={optionalServices:[SVC,DIS,BAT,OTA_SVC]};
+    const dev=await navigator.bluetooth.requestDevice(all?{acceptAllDevices:true,...opt}:{filters:[{namePrefix:"ONEUS"},{services:[SVC]}],...opt});
+    S.dev=dev;
+    dev.addEventListener("gattserverdisconnected",onDisconnected);
+    await openGatt();
+    await survey();
+  }catch(e){
+    connNote(e.name==="NotFoundError"?"No stick was chosen. Put it in Bluetooth mode and try again.":
+      e.name==="SecurityError"?"Bluetooth is blocked here. Open this page in its own Chrome tab.":`Couldn't connect: ${e.message}`);
+    if(!S.dev?.gatt?.connected)setConn("off","Not connected");
+  }
+}
+async function openGatt(){
+  setConn("busy","Connecting…");
+  const server=await S.dev.gatt.connect();
+  S.svc=await server.getPrimaryService(SVC);
+  S.chars={};for(const [k,u] of Object.entries(WRITABLE))S.chars[k]=await S.svc.getCharacteristic(u);
+  try{
+    S.notify=await S.svc.getCharacteristic(NOTIFY);
+    S.notify.addEventListener("characteristicvaluechanged",onNotify);
+    await S.notify.startNotifications();
+  }catch(e){S.notify=null;log("No reply channel B003: "+e.message)}
+  setConn("on",`Connected · ${S.dev.name||"stick"}`);
+  log(`Connected to ${S.dev.name||"stick"}${S.notify?" · listening on B003":""}`);
+}
+function onDisconnected(){
+  setConn("lost","Disconnected");log("!! Stick disconnected");
+  if(S.running&&!S.paused){S.disconnectedAt=S.i;S.paused=true;$("pause").textContent="Resume";
+    $("nowDetail").innerHTML=`<span class="note bad">The stick dropped the connection. Put it back in Bluetooth mode, tap <b>Reconnect</b>, then <b>Resume</b>.</span>`}
+}
+async function reconnect(){
+  connNote("");
+  try{await openGatt();$("pause").disabled=!S.running}
+  catch(e){setConn("lost","Disconnected");connNote("Couldn't reach the stick. Re-enter Bluetooth mode (blinking blue) and tap Reconnect again.")}
+}
+function onNotify(e){
+  const v=new Uint8Array(e.target.value.buffer.slice(e.target.value.byteOffset,e.target.value.byteOffset+e.target.value.byteLength));
+  const echo=S.lastSent&&hx(v)===hx(S.lastSent.bytes);
+  S.notes.push({t:performance.now(),bytes:v,echo});
+  log(`  ← B003 ${hx(v)}${echo?" (echo)":""}`);
+}
+async function readHex(c){try{return hx(new Uint8Array((await c.readValue()).buffer))}catch(e){return "ERR: "+e.message}}
+
+async function survey(){
+  const rows=[];
+  const add=(k,v)=>rows.push(`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`);
+  add("Name",S.dev.name||"(none)");
+  const server=S.dev.gatt,dec=new TextDecoder();
+  try{const s=await server.getPrimaryService(DIS);
+    for(const [u,n] of DIS_CHARS){try{const c=await s.getCharacteristic(u16(u));const b=new Uint8Array((await c.readValue()).buffer);
+      add(n,/ID$/.test(n)?hx(b):dec.decode(b).replace(/\0+$/,""))}catch(e){}}}catch(e){add("Device info","not available")}
+  try{const s=await server.getPrimaryService(BAT);const c=await s.getCharacteristic(u16(0x2A19));add("Battery",(new Uint8Array((await c.readValue()).buffer))[0]+"%")}catch(e){}
+  try{await server.getPrimaryService(OTA_SVC);add("Firmware-update service","present (never written)")}catch(e){}
+  for(const k of ["b001","b002"]){const v=await readHex(S.chars[k]);if(!(k in S.baseline))S.baseline[k]=v;add(`${k.toUpperCase()} baseline`,S.baseline[k]||"(empty)")}
+  $("info").innerHTML=rows.join("");$("infoPanel").hidden=false;
+  log("Baseline "+Object.entries(S.baseline).map(([k,v])=>`${k.toUpperCase()}=${v||"(empty)"}`).join(" · "));
+}
+
+// ================= plan =================
+function renderGroups(){
+  $("groups").innerHTML=GROUPS.map(g=>`<label><input type="checkbox" data-g="${g.id}" ${g.on?"checked":""}><span>${esc(g.name)}<small>${esc(g.hint)}</small></span></label>`).join("");
+  $("groups").querySelectorAll("input").forEach(i=>i.onchange=updateCount);
+}
+function buildPlan(){
+  const targets=[$("tB002").checked&&"b002",$("tB001").checked&&"b001"].filter(Boolean);
+  const on=new Set([...$("groups").querySelectorAll("input:checked")].map(i=>i.dataset.g));
+  const plan=[];
+  for(const t of targets)for(const g of GROUPS)if(on.has(g.id))for(const b of g.make())plan.push({kind:g.id,target:t,bytes:b});
+  return plan;
+}
+function updateCount(){const n=buildPlan().length,d=+$("delay").value,ask=$("mode").value==="ask";
+  $("planCount").textContent=`${n} steps · about ${Math.ceil(n*(d+.4)/60)} min${ask?" plus your answers":""}.`}
+
+// ================= one step =================
+async function safeWrite(target,bytes){
+  const c=S.chars[target];
+  if(!c||!Object.values(WRITABLE).includes(c.uuid))throw new Error("refusing to write outside B001/B002");
+  await c.writeValueWithResponse(bytes);
+}
+async function doStep(idx,total,step,interactive){
+  const {kind,target,bytes}=step;
+  $("now").textContent=`${target.toUpperCase()} ← ${hx(bytes)}`;
+  $("progTxt").textContent=`${idx} / ${total}`;$("progBar").style.width=(idx/total*100)+"%";
+  const before=await readHex(S.chars[target]);
+  const n0=S.notes.length;S.lastSent={target,bytes};
+  let err="";
+  try{await safeWrite(target,bytes)}catch(e){err=e.message||String(e)}
+  await sleep(+$("delay").value*1000);
+  const disc=!S.dev.gatt.connected;
+  const after=disc?"":await readHex(S.chars[target]);
+  const notes=S.notes.slice(n0);
+  const replies=notes.filter(n=>!n.echo).map(n=>hx(n.bytes));
+  const echoes=notes.filter(n=>n.echo).length;
+  const changed=!!after&&after!==before;
+  const parts=[];
+  if(err)parts.push("write rejected: "+err);else parts.push("accepted");
+  if(changed)parts.push(`reads back ${after}`);
+  if(echoes)parts.push(`echoed ×${echoes}`);
+  if(replies.length)parts.push("REPLY "+replies.join(" | "));
+  if(disc)parts.push("DISCONNECTED");
+  $("nowDetail").textContent=parts.join(" · ");
+  log(`[${idx}/${total}] ${kind} ${target.toUpperCase()} ← ${hx(bytes)} · ${parts.join(" · ")}`);
+  const row={step:idx,kind,target,sent:hx(bytes),error:err,before,after,changed,echoes,replies:replies.join(" | "),disconnected:disc,led:""};
+  S.rows.push(row);renderRows();
+  if(interactive&&!disc&&!S.stopReq){row.led=await askLed();if(row.led)log(`   LED: ${row.led}`);renderRows()}
+  return row;
+}
+function askLed(){
+  $("ask").hidden=false;$("askWhatBox").hidden=true;$("askWhat").value="";$("askNo").focus();
+  return new Promise(res=>{S.askResolve=v=>{S.askResolve=null;$("ask").hidden=true;res(v)}});
+}
+
+// ================= run control =================
+async function run(){
+  if(S.running)return;
+  S.plan=buildPlan();if(!S.plan.length){$("nowDetail").textContent="Pick at least one channel and one group of steps.";return}
+  S.running=true;S.paused=false;S.stopReq=false;S.i=0;
+  $("run").disabled=true;$("oneSend").disabled=true;$("pause").disabled=false;$("pause").textContent="Pause";$("stop").disabled=false;
+  log(`Running ${S.plan.length} steps (${$("mode").value==="ask"?"asking after each":"auto"})`);
+  const interactive=$("mode").value==="ask";
+  while(S.i<S.plan.length&&!S.stopReq){
+    if(S.paused||!S.dev.gatt.connected){await sleep(200);continue}
+    const row=await doStep(S.i+1,S.plan.length,S.plan[S.i],interactive);
+    if(row.disconnected&&!S.stopReq){S.i++;continue}       // onDisconnected already paused the run
+    S.i++;
+  }
+  await finish();
+}
+async function finish(){
+  const done=S.i>=S.plan.length;
+  S.running=false;S.paused=false;
+  if(S.askResolve)S.askResolve("");
+  $("pause").disabled=true;$("pause").textContent="Pause";$("stop").disabled=true;
+  log(done?"Plan finished.":"Stopped.");
+  $("now").textContent=done?"Plan finished":"Stopped";
+  await restore();
+  setConn(S.dev?.gatt?.connected?"on":"lost",S.dev?.gatt?.connected?`Connected · ${S.dev.name||"stick"}`:"Disconnected");
+  renderSummary();
+}
+async function restore(){
+  if(!S.dev?.gatt?.connected){if(Object.keys(S.baseline).length)log("Couldn't restore (not connected). Original values: "+JSON.stringify(S.baseline));return}
+  for(const [k,v] of Object.entries(S.baseline)){
+    if(!v||v.startsWith("ERR"))continue;
+    try{await safeWrite(k,fromHex(v));log(`Restored ${k.toUpperCase()} to ${v}`)}catch(e){log(`Couldn't restore ${k.toUpperCase()}: ${e.message}`)}
+  }
+}
+async function sendOne(){
+  const b=fromHex($("oneHex").value);if(!b){$("nowDetail").textContent="Type hex bytes, like 01 FF 00 00";return}
+  $("oneSend").disabled=true;
+  try{await doStep(S.rows.length+1,S.rows.length+1,{kind:"custom",target:$("oneTarget").value,bytes:b},$("mode").value==="ask")}
+  finally{$("oneSend").disabled=!S.dev?.gatt?.connected;renderSummary()}
+}
+
+// ================= results =================
+function renderRows(){
+  $("rows").innerHTML=S.rows.map(r=>{
+    const hit=r.replies||r.disconnected||r.led;
+    const res=[r.error?`<span class="chip bad">rejected</span> ${esc(r.error)}`:`<span class="chip ok">ok</span>`,
+      r.changed?` → ${esc(r.after)}`:"",r.echoes?` <span class="chip">echo</span>`:"",
+      r.replies?` <span class="chip warn">reply</span> ${esc(r.replies)}`:"",r.disconnected?` <span class="chip bad">dropped</span>`:""].join("");
+    return `<tr class="${hit?"hit":""}"><td>${r.step}</td><td>${r.target.toUpperCase()}</td><td>${esc(r.sent)}</td><td>${res}</td><td>${esc(r.led)}</td></tr>`}).join("");
+  $("resCount").textContent=S.rows.length?`${S.rows.length} steps`:"";
+  const t=$("rows").parentElement.parentElement;t.scrollTop=t.scrollHeight;
+}
+function lengthsAccepted(target){
+  const L=S.rows.filter(r=>r.target===target&&r.kind==="length");if(!L.length)return null;
+  const ok=L.filter(r=>!r.error).map(r=>r.sent.split(" ").length),bad=L.filter(r=>r.error).map(r=>r.sent.split(" ").length);
+  return `${target.toUpperCase()} accepts lengths ${ok.join(",")||"none"}${bad.length?` · rejects ${bad.join(",")}`:""}`;
+}
+function summaryItems(){
+  const R=S.rows;if(!R.length)return[];
+  const out=[];
+  for(const t of ["b002","b001"]){const l=lengthsAccepted(t);if(l)out.push(l)}
+  const acc=R.filter(r=>!r.error).length;out.push(`${acc} of ${R.length} writes accepted`);
+  const echo=R.filter(r=>r.echoes).length;if(echo)out.push(`${echo} writes were echoed back unchanged on B003`);
+  const pick=(title,f)=>{const h=R.filter(f);out.push(`${title}: ${h.length?h.slice(0,12).map(r=>`#${r.step} ${r.target.toUpperCase()} ${r.sent}`).join("; ")+(h.length>12?` (+${h.length-12} more)`:""):"none"}`)};
+  pick("LED reacted",r=>r.led);
+  pick("Different reply on B003",r=>r.replies);
+  pick("Caused a disconnect",r=>r.disconnected);
+  const stored=R.filter(r=>!r.error&&r.after&&r.after!==r.before);
+  out.push(`Readback changed after ${stored.length} writes${stored.length&&stored.every(r=>r.after.startsWith(r.sent))?" (it simply stores what was written)":""}`);
+  return out;
+}
+function renderSummary(){
+  const it=summaryItems();
+  $("summary").innerHTML=it.length?it.map(x=>`<li>${esc(x)}</li>`).join(""):`<li class="note">Run the plan to see what the stick reacted to.</li>`;
+}
+function resultsText(){
+  const info=[...$("info").querySelectorAll("dt")].map(dt=>`${dt.textContent}: ${dt.nextElementSibling.textContent}`).join("\n");
+  const rows=S.rows.map(r=>`#${r.step} ${r.kind} ${r.target.toUpperCase()} <- ${r.sent} | ${r.error?"REJECTED "+r.error:"ok"}${r.changed?" | reads "+r.after:""}${r.echoes?" | echo":""}${r.replies?" | REPLY "+r.replies:""}${r.disconnected?" | DISCONNECTED":""}${r.led?" | LED: "+r.led:""}`).join("\n");
+  return `ONEUS probe results\n\n${info}\n\nSummary:\n- ${summaryItems().join("\n- ")}\n\nSteps:\n${rows}`;
+}
+function csv(){
+  const cols=["step","kind","target","sent","error","before","after","changed","echoes","replies","disconnected","led"];
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const text=[cols.join(","),...S.rows.map(r=>cols.map(c=>q(r[c])).join(","))].join("\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"text/csv"}));
+  a.download=`oneus-probe-${new Date().toISOString().slice(0,16).replace(/[:T]/g,"-")}.csv`;document.body.appendChild(a);a.click();a.remove();
+}
+
+// ================= wiring =================
+renderGroups();updateCount();
+$("tB001").onchange=$("tB002").onchange=$("delay").onchange=$("mode").onchange=updateCount;
+$("connect").onclick=()=>connect(false);
+$("connectAll").onclick=()=>connect(true);
+$("reconnect").onclick=reconnect;
+$("disconnect").onclick=async()=>{if(S.running){S.stopReq=true;while(S.running)await sleep(100)}else await restore();try{S.dev.gatt.disconnect()}catch(e){}};
+$("run").onclick=run;
+$("pause").onclick=()=>{if(!S.running)return;S.paused=!S.paused;$("pause").textContent=S.paused?"Resume":"Pause";log(S.paused?"Paused":"Resumed")};
+$("stop").onclick=()=>{S.stopReq=true;if(S.askResolve)S.askResolve("")};
+$("oneSend").onclick=sendOne;
+$("oneHex").onkeydown=e=>{if(e.key==="Enter"&&!$("oneSend").disabled)sendOne()};
+$("askNo").onclick=()=>S.askResolve&&S.askResolve("");
+$("askYes").onclick=()=>{$("askWhatBox").hidden=false;$("askWhat").focus()};
+$("askSave").onclick=()=>S.askResolve&&S.askResolve($("askWhat").value.trim()||"changed");
+$("askWhat").onkeydown=e=>{if(e.key==="Enter")$("askSave").click()};
+$("copyLog").onclick=async()=>{try{await navigator.clipboard.writeText(resultsText());$("copyLog").textContent="Copied"}catch(e){$("copyLog").textContent="Couldn't copy"}setTimeout(()=>$("copyLog").textContent="Copy results for Claude",1500)};
+$("csv").onclick=csv;
+$("clear").onclick=()=>{if(S.running)return;S.rows=[];S.lines=[];$("log").textContent="";renderRows();renderSummary()};
+addEventListener("beforeunload",e=>{if(S.running){e.preventDefault();e.returnValue=""}});
+window.__probe=S;   // for testing
+})();
+</script>
+</body>
+</html>
