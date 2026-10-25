@@ -1,0 +1,24 @@
+{
+  "appId": "io.github.midknight88.frontrow",
+  "appName": "Front Row",
+  "webDir": "www",
+  "server": {
+    "url": "https://midknight88.github.io/The-Front-Row-Experience/",
+    "errorPath": "offline.html",
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#0c0b14",
+    "appendUserAgent": "FrontRowApp"
+  },
+  "plugins": {
+    "BluetoothLe": {
+      "displayStrings": {
+        "scanning": "Looking for light sticks…",
+        "cancel": "Cancel",
+        "availableDevices": "Nearby devices",
+        "noDeviceFound": "No light sticks found"
+      }
+    }
+  }
+}

@@ -1,0 +1,81 @@
+name: Android app
+
+on:
+  push:
+    branches: [main]
+    paths: ["app/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install Capacitor and the Bluetooth plugin
+        run: npm install --no-audit --no-fund
+
+      - name: Generate the Android project
+        run: |
+          npx cap add android
+          VERSION_CODE=${{ github.run_number }} VERSION_NAME=1.0.${{ github.run_number }} ./scripts/prepare-android.sh
+
+      - name: Launcher icon and splash screen
+        run: npx --yes @capacitor/assets@3 generate --android --iconBackgroundColor '#0c0b14' --iconBackgroundColorDark '#0c0b14' --splashBackgroundColor '#0c0b14' --splashBackgroundColorDark '#0c0b14'
+
+      - name: Sync
+        run: npx cap sync android
+
+      - name: Build
+        working-directory: app/android
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: Sign
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/zipalign" -p -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > release.jks
+            "$BT/apksigner" sign --ks release.jks --ks-pass env:KEYSTORE_PASSWORD --ks-key-alias "$KEY_ALIAS" --out FrontRow.apk aligned.apk
+            rm release.jks
+            echo "SIGNED=release" >> "$GITHUB_ENV"
+          else
+            echo "::warning::No signing key in the repo secrets: this build is a test copy signed with a throwaway key and is not published."
+            keytool -genkeypair -keystore test.jks -storepass testtest -keypass testtest -alias test -keyalg RSA -validity 30 -dname CN=test
+            "$BT/apksigner" sign --ks test.jks --ks-pass pass:testtest --out FrontRow.apk aligned.apk
+            echo "SIGNED=test" >> "$GITHUB_ENV"
+          fi
+          "$BT/apksigner" verify --print-certs FrontRow.apk | head -3
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FrontRow-apk
+          path: app/FrontRow.apk
+
+      - name: Publish release
+        if: env.SIGNED == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=android-1.0.${{ github.run_number }}
+          gh release create "$TAG" FrontRow.apk --title "Front Row for Android 1.0.${{ github.run_number }}" \
+            --notes "Install on Android: download FrontRow.apk on the phone and open it. Always-current link: https://github.com/${{ github.repository }}/releases/latest/download/FrontRow.apk" --latest

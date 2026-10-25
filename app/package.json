@@ -1,0 +1,14 @@
+{
+  "name": "front-row-android",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Android app for The Front Row Experience: the live web app with native Bluetooth",
+  "dependencies": {
+    "@capacitor-community/bluetooth-le": "^8.3.0",
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/core": "^8.5.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.0"
+  }
+}
