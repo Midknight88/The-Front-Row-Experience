@@ -236,6 +236,7 @@ code{font-family:var(--mono);font-size:.78rem}
         <button id="showStart" class="primary" style="flex:1">Start</button>
         <button id="showStop">Stop</button>
       </div>
+      <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="loopShow"> <span>Loop: start the show again when it ends</span></label>
       <div class="row">
         <span class="label">Nudge</span>
         <button id="nudgeBack" class="small">−0.1 s</button>
@@ -698,7 +699,8 @@ function tick(nowMs){
     else{fx="Off";secLabel="Waiting for first cue"}
     if(paused){bright*=.25;secLabel+=" · paused"}
     $("playClock").textContent=fmtT(clk);
-    if(show.duration&&clk>show.duration+2&&(p.src==="tap"||p.src==="file"))stopShow();
+    if(show.duration&&p.src==="tap"&&loopOn()&&clk>=show.duration){p.startPerf+=show.duration;p.cue=-2}   // loop: wrap the clock, keep the beat
+    else if(show.duration&&clk>show.duration+2&&(p.src==="tap"||p.src==="file")&&!loopOn())stopShow();
   }
   const beat=beatNow(t);
   const active=st.devices.filter(d=>d.kind!=="lost"),n=active.length;
@@ -837,7 +839,7 @@ function startShow(){
     if(audio.ctx.state==="suspended")audio.ctx.resume();
     const s=audio.ctx.createBufferSource();s.buffer=audio.buf;s.connect(audio.ctx.destination);
     audio.startAt=audio.ctx.currentTime+.05;s.start(audio.startAt);audio.src=s;
-    s.onended=()=>{if(audio.src===s)stopShow()};
+    s.onended=()=>{if(audio.src!==s)return;if(loopOn())startShow();else stopShow()};
   }else{p.startPerf=nowS()}
   beginShow();
 }
@@ -900,7 +902,10 @@ function ytCheckShow(){
   $("ytNoShowTitle").textContent=info.title?`${info.title}${info.channel?" · "+info.channel:""}`:"";
 }
 function ytState(s){
-  yt.state=s;if(s===5||s===1||s===2)ytCheckShow();
+  yt.state=s;
+  if(s===0&&loopOn()&&st.play.src==="yt"&&(st.play.on||st.play.follow)&&yt.player){   // ended: play it again from the song's start
+    try{yt.player.seekTo(Math.max(0,curShow()?.youtube?.offset||0),true);yt.player.playVideo()}catch(e){}st.play.cue=-2;
+  }if(s===5||s===1||s===2)ytCheckShow();
   if(s===1&&st.play.src==="yt"){             // playing: follow automatically, even if started from the video's own button
     st.play.follow=true;
     if(!st.play.on&&curShow())beginShow();
@@ -914,6 +919,7 @@ function ytTime(){
 function updateYtOffOut(){const show=curShow();$("ytOffOut").textContent=show?.youtube?.id===yt.vid&&yt.vid?`Song starts at ${fmtT(show.youtube.offset||0)} in this video`:""}
 
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
+const loopOn=()=>lsGet("fre.loop")==="1";
 
 // ================= music source =================
 function setSource(src){
@@ -1207,6 +1213,7 @@ function fillProfiles(){pSel.innerHTML="";Object.keys(st.profiles).forEach(k=>{c
 function loadProfile(){const p=st.profiles[st.profile];$("pNamePrefix").value=p.prefix;$("pSvc").value=p.svc;$("pChr").value=p.chr;$("pTpl").value=p.tpl;$("pKey").value=p.key||"";$("pResp").value=p.resp?"1":"0"}
 pSel.onchange=()=>{st.profile=pSel.value;loadProfile()};
 $("addVirtual").onclick=()=>addVirtual();
+$("loopShow").checked=loopOn();$("loopShow").onchange=()=>lsSet("fre.loop",$("loopShow").checked?"1":"0");
 $("reconBanner").onclick=()=>{$("tab-sticks").click();$("reconnect").scrollIntoView?.({behavior:"smooth",block:"center"})};
 $("refreshShows").onclick=async()=>{const b=$("refreshShows"),before=JSON.stringify(Object.values(st.shows).filter(s=>s.origin==="repo").map(showKey));b.disabled=true;b.textContent="Checking…";
   await loadRepoShows();const after=JSON.stringify(Object.values(st.shows).filter(s=>s.origin==="repo").map(showKey));
