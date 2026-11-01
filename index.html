@@ -397,6 +397,7 @@ async function aesBlock(keyHex,data){
 async function addBle(showAll){
   if(NATIVE)return nativeFind(showAll===true);
   const note=$("bleNote");note.hidden=true;
+  if(IN_APP&&!NATIVE){note.textContent="The app couldn't reach its Bluetooth connection. Close the app fully and open it again; if this keeps happening, send Claude a screenshot.";note.hidden=false;return}
   if(!navigator.bluetooth){note.textContent="This browser can't reach Bluetooth. Open this page in Chrome on Android (or the Bluefy browser on iPhone), served over https. Virtual sticks still work here.";note.hidden=false;return}
   try{
     const o=allStickOptions();
@@ -486,8 +487,12 @@ addEventListener("beforeunload",e=>{if(st.devices.some(d=>d.kind==="ble")){try{s
 // In the Android app the page gets a Web Bluetooth look-alike built on the native plugin, so the
 // rest of the app (connectDevice, sendBle, sticks list) works unchanged. On top of that it scans
 // by itself and connects every known light stick it hears.
-const CAP=window.Capacitor,NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform()&&CAP.registerPlugin);
-const BLE=NATIVE?CAP.registerPlugin("BluetoothLe"):null;
+// The app loads this page from GitHub Pages, so only Capacitor's injected bridge is here (not its JS library):
+// call the plugin through the bridge's nativePromise / addListener, or registerPlugin when a bundled build has it.
+const CAP=window.Capacitor,IN_APP=/FrontRowApp/.test(navigator.userAgent||"");
+const NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform()&&(CAP.nativePromise||CAP.registerPlugin));
+const BLE=!NATIVE?null:CAP.nativePromise?new Proxy({},{get:(_,m)=>m==="then"?undefined:m==="addListener"?
+    (ev,cb)=>Promise.resolve(CAP.addListener("BluetoothLe",ev,cb)):o=>CAP.nativePromise("BluetoothLe",String(m),o||{})}):CAP.registerPlugin("BluetoothLe");
 const fullUuid=u=>{u=String(u||"").toLowerCase().trim().replace(/^0x/,"");return /^[0-9a-f]{4}$/.test(u)?`0000${u}-0000-1000-8000-00805f9b34fb`:/^[0-9a-f]{8}$/.test(u)?`${u}-0000-1000-8000-00805f9b34fb`:u};
 const hexOf=d=>{const a=d instanceof Uint8Array?d:ArrayBuffer.isView(d)?new Uint8Array(d.buffer,d.byteOffset,d.byteLength):new Uint8Array(d);return [...a].map(v=>v.toString(16).padStart(2,"0")).join("")};
 const dvOf=h=>new DataView(new Uint8Array((String(h||"").match(/[0-9a-f]{2}/gi)||[]).map(x=>parseInt(x,16))).buffer);
