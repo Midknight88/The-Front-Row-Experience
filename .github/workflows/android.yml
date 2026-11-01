@@ -53,6 +53,9 @@ jobs:
         run: |
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           "$BT/zipalign" -p -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
+          # secrets pasted with a stray space or line break still work
+          KEYSTORE_PASSWORD="$(printf %s "$KEYSTORE_PASSWORD" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"; export KEYSTORE_PASSWORD
+          KEY_ALIAS="$(printf %s "$KEY_ALIAS" | tr -d '\r\n ')"
           if [ -n "$KEYSTORE_B64" ]; then
             printf %s "$KEYSTORE_B64" | tr -d ' \r\n' | base64 -d > release.jks || echo "::error title=Signing key::ANDROID_KEYSTORE_B64 isn't valid base64 (paste the whole file, nothing else)"
             echo "::notice title=Signing key check::keystore $(wc -c < release.jks) bytes (expect 4316), password length ${#KEYSTORE_PASSWORD} (expect 32), alias '${KEY_ALIAS}'"
