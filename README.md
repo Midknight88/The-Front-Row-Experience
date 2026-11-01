@@ -6,7 +6,7 @@ Open it in Chrome on Android (or the Bluefy browser on iPhone). Everything is in
 
 ## Android app
 
-`app/` wraps the live site in a native Android app (Capacitor + the `@capacitor-community/bluetooth-le` plugin). The app loads https://midknight88.github.io/The-Front-Row-Experience/, so every web update reaches it without reinstalling; only changes in `app/` need a new APK.
+`app/` wraps the live site in a native Android app, "Front Row at Home" (Capacitor + the `@capacitor-community/bluetooth-le` plugin). The app loads https://midknight88.github.io/The-Front-Row-Experience/, so every web update reaches it without reinstalling; only changes in `app/` need a new APK.
 
 In the app, Bluetooth goes through the native plugin instead of Web Bluetooth: it scans on its own and connects every stick that matches a known profile (by name prefix, or by advertised service for profiles with `alsoService`), with no chooser. It asks once whether this phone should connect automatically (use it on one phone per house, since a stick accepts one phone at a time). Removing a stick stops it auto-connecting until **Find sticks** picks it up again. Profiles marked `noAuto` (the LED-strip test rig) never auto-connect.
 

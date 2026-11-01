@@ -87,5 +87,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG=android-1.0.${{ github.run_number }}
-          gh release create "$TAG" FrontRow.apk --title "Front Row for Android 1.0.${{ github.run_number }}" \
+          gh release create "$TAG" FrontRow.apk --title "Front Row at Home for Android 1.0.${{ github.run_number }}" \
             --notes "Install on Android: download FrontRow.apk on the phone and open it. Always-current link: https://github.com/${{ github.repository }}/releases/latest/download/FrontRow.apk" --latest

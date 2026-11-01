@@ -129,7 +129,7 @@ code{font-family:var(--mono);font-size:.78rem}
   <button id="reconBanner" class="primary" hidden>Reconnect your light sticks</button>
   <div id="autoAsk" class="panel" hidden><div style="display:flex;flex-direction:column;gap:10px">
     <b>Connect to your light sticks automatically?</b>
-    <p class="note">Front Row will find the light sticks that are switched on and connect them by itself whenever the app is open. If more than one phone in the house has Front Row, turn this on for just one, so the phones don't take each other's sticks.</p>
+    <p class="note">Front Row at Home will find the light sticks that are switched on and connect them by itself whenever the app is open. If more than one phone in the house has Front Row at Home, turn this on for just one, so the phones don't take each other's sticks.</p>
     <div class="row"><button id="autoYes" class="primary">Yes, connect automatically</button><button id="autoNo" class="ghost">Not now</button></div>
   </div></div>
 
@@ -538,7 +538,7 @@ const setIgnored=(id,on)=>{const s=new Set(ignoredIds());on?s.add(id):s.delete(i
 let bleReadyP=null;
 function bleReady(){
   return bleReadyP=bleReadyP||(async()=>{
-    try{await BLE.initialize({androidNeverForLocation:true})}catch(e){throw new Error("Front Row needs the Nearby devices permission to find light sticks. Allow it in Android Settings > Apps > Front Row > Permissions.")}
+    try{await BLE.initialize({androidNeverForLocation:true})}catch(e){throw new Error("Front Row at Home needs the Nearby devices permission to find light sticks. Allow it in Android Settings > Apps > Front Row at Home > Permissions.")}
     let on=(await BLE.isEnabled()).value;
     if(!on){try{await BLE.requestEnable()}catch(e){}on=(await BLE.isEnabled()).value}
     if(!on)throw new Error("Bluetooth is off. Turn it on, then tap Find sticks.");
