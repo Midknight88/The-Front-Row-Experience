@@ -54,7 +54,9 @@ jobs:
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           "$BT/zipalign" -p -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
           if [ -n "$KEYSTORE_B64" ]; then
-            echo "$KEYSTORE_B64" | base64 -d > release.jks
+            printf %s "$KEYSTORE_B64" | tr -d ' \r\n' | base64 -d > release.jks || echo "::error title=Signing key::ANDROID_KEYSTORE_B64 isn't valid base64 (paste the whole file, nothing else)"
+            echo "::notice title=Signing key check::keystore $(wc -c < release.jks) bytes (expect 4316), password length ${#KEYSTORE_PASSWORD} (expect 32), alias '${KEY_ALIAS}'"
+            if keytool -list -keystore release.jks -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null 2>&1; then echo "::notice title=Signing key check::keystore, password and alias match"; else echo "::error title=Signing key check::keystore, password and alias don't match: $(keytool -list -keystore release.jks -storepass "$KEYSTORE_PASSWORD" 2>&1 | grep -iE 'error|exception|alias' | head -2 | tr '\n' ' ')"; fi
             "$BT/apksigner" sign --ks release.jks --ks-pass env:KEYSTORE_PASSWORD --ks-key-alias "$KEY_ALIAS" --out FrontRow.apk aligned.apk
             rm release.jks
             echo "SIGNED=release" >> "$GITHUB_ENV"
