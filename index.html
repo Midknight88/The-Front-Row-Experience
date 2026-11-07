@@ -32,6 +32,13 @@ section{display:flex;flex-direction:column;gap:10px}
 .sname{font-family:var(--mono);font-size:.65rem;color:var(--muted);text-align:center;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin-right:4px}
 .dot.live{background:var(--ok)}
+/* Shows tab with YouTube: a compact row of sticks right under the video */
+#stageSlot:empty{display:none}
+#stageSlot .stage{margin:0;padding:16px 8px 8px;border-radius:12px;min-height:0;gap:clamp(6px,3vw,18px)}
+#stageSlot .stick{width:44px;gap:4px}
+#stageSlot .bulb{width:30px;height:30px;box-shadow:0 0 calc(var(--b,1)*18px) calc(var(--b,1)*5px) var(--c,#000)}
+#stageSlot .handle{width:8px;height:26px}
+#stageSlot .sname{font-size:.58rem}
 .now{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
 .now .sec{font-family:var(--display);font-weight:800;font-size:1.15rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .now .bpm{font-family:var(--display);font-weight:800;font-size:1.6rem;font-variant-numeric:tabular-nums;line-height:1;text-align:right}
@@ -207,6 +214,7 @@ code{font-family:var(--mono);font-size:.78rem}
           <button id="ytLoad">Load</button>
         </div>
         <div class="ytwrap" id="ytWrap" hidden><div id="ytBox"></div></div>
+        <div id="stageSlot"></div>
         <div class="row" id="ytShowRow" hidden>
           <button id="ytSave" class="small">Use this video for this show</button>
           <button id="ytOffNow" class="small" title="Pause the video on the song's first beat, then tap">Song starts here</button>
@@ -1245,6 +1253,12 @@ setSource(["yt","file","tap"].includes(lsGet("fre.src"))?lsGet("fre.src"):"yt");
 if(!NATIVE)["Stick 1","Stick 2","Stick 3","Stick 4"].forEach(n=>addVirtual(n));
 try{const t=localStorage.getItem("fre.tab");if(t&&$("tab-"+t))$("tab-"+t).click()}catch(e){}
 renderReconnect();autoReconnect();
+
+// Shows tab with YouTube as the music source: move the sticks under the video so both are in view
+(function(){const stage=$("stage"),home=document.createComment("stage-home");stage.before(home);
+  function place(){const yt=$("tab-shows").getAttribute("aria-selected")==="true"&&!$("src-yt").hidden,slot=$("stageSlot");
+    if(yt){if(stage.parentNode!==slot)slot.appendChild(stage)}else if(home.nextSibling!==stage)home.after(stage)}
+  new MutationObserver(place).observe(document.body,{subtree:true,attributes:true,attributeFilter:["aria-selected","hidden"]});place()})();
 if(NATIVE)nativeStart();
 requestAnimationFrame(tick);
 })();
